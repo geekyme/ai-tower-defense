@@ -166,6 +166,21 @@ a { color: var(--cyan); }
   margin: 0 0 4px;
 }
 
+/* Author byline. Quiet, and never competing with a call to action. */
+.credit {
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--dim);
+  text-align: center;
+  margin: 16px 0 0;
+}
+.credit a {
+  color: var(--violet);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(163, 121, 255, .35);
+}
+.credit a:hover { border-bottom-color: var(--violet); }
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
