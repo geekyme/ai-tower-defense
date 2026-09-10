@@ -61,7 +61,10 @@ const { paintBackground } = await import('../src/render/board.js');
 const { threatThumbnail } = await import('../src/render/shapes.js');
 
 const canvas = { style: {}, width: 0, height: 0, getContext: () => ctx2d };
-const stage = { getBoundingClientRect: () => ({ width: 380, height: 620 }) };
+const stage = {
+  style: { setProperty: noop },
+  getBoundingClientRect: () => ({ width: 380, height: 620 }),
+};
 initView(canvas, stage, paintBackground);
 
 // Every threat's artwork must at least draw without throwing.

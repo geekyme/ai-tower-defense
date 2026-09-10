@@ -63,6 +63,11 @@ export function layout() {
   canvas.width = Math.round(W * dpr);
   canvas.height = Math.round(H * dpr);
 
+  // The overlays that float above the board are sized from these, so they
+  // track the canvas rather than the stage, which is wider on desktop.
+  stage.style.setProperty('--board-w', W + 'px');
+  stage.style.setProperty('--board-h', H + 'px');
+
   WP = WAYPOINTS.map(([c, r]) => ({ x: (c + 0.5) * cell, y: (r + 0.5) * cell }));
   SEG = [];
   TOTAL = 0;

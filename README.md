@@ -38,6 +38,25 @@ push to `main`. Every path in the HTML is relative, so it works at a project URL
 use Actions, setting Pages to *Deploy from a branch → main → / (root)* also works —
 `.nojekyll` is already there so Jekyll leaves the files alone.
 
+## Responsive layouts
+
+The board is a fixed 9x14 portrait grid, so its size is almost always limited by
+height, not width. `#app` is a single CSS grid whose children never move in the DOM —
+only which grid area they land in — so the three layouts are pure CSS:
+
+| Viewport | Layout | Board on a phone/laptop |
+| --- | --- | --- |
+| Narrow portrait | HUD on top, board, shop below | 378x588 at 390x844 |
+| Portrait ≥ 620px | Same, wider column | 540x840 on an iPad |
+| ≥ 900px wide, or landscape under 620px tall | HUD and shop in a side rail, board takes the full height | 567x882 at 1440x900 |
+
+In short landscape the board also shifts left and the build sheets dock beside it
+rather than on top of it — a sheet across a 243px board hides the whole game.
+
+`layout()` in `core/view.js` publishes the measured board size as `--board-w` and
+`--board-h` on the stage, which is what keeps the floating sheets and the call-wave row
+pinned to the board rather than stretching across a much wider stage on desktop.
+
 ## Testing
 
 ```bash
@@ -50,7 +69,7 @@ renders all 37 threat artworks, and asserts that waves advance and lessons unloc
 wave in order. It catches the things that break when the data files are edited. Takes
 about five seconds and runs in CI before every deploy.
 
-## Layout
+## Project structure
 
 ```
 index.html            the game

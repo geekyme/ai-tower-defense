@@ -144,3 +144,26 @@ footer.foot {
   padding: 6px 12px;
   cursor: pointer;
 }
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (min-width: 760px) {
+  .wrap { max-width: 860px; padding: 40px 28px 70px; }
+  header.top h1 { font-size: 32px; }
+  .lede { font-size: 13.5px; }
+
+  /* Two lessons abreast once there is room for two comfortable columns. */
+  .ls-era { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 26px; }
+  .ls-era-head, .ls-era-sub { grid-column: 1 / -1; }
+  .ls { border-top: 1px solid rgba(43, 61, 94, .5); }
+  /* With two columns the first row is two cards, not one. */
+  .ls:nth-of-type(2) { border-top: 0; }
+}
+
+@media (min-width: 1180px) {
+  .wrap { max-width: 1080px; }
+  .ls-era { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 26px; }
+  .ls:nth-of-type(3) { border-top: 0; }
+}
