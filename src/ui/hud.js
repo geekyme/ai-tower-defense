@@ -3,6 +3,7 @@ import { CAMPAIGN_WAVES } from '../data/waves.js';
 import { S } from '../core/state.js';
 import { el, refs } from './dom.js';
 import { fillInspect, showPreview, isPreviewOpen } from './panels.js';
+import { placeHint, invalidateHint } from './place-hint.js';
 
 /**
  * The top status bar and the shop's affordability state.
@@ -16,9 +17,14 @@ let lastKey = '';
 /** Forces the next hud() call to repaint, after anything changes off-frame. */
 export function invalidateHud() {
   lastKey = '';
+  invalidateHint();
 }
 
 export function hud() {
+  // Outside the signature check below: the strip also answers to the sheets
+  // opening and closing, which leave every number on the bar untouched.
+  placeHint();
+
   const key = S.sanity + '|' + Math.floor(S.focus) + '|' + S.wave + '|' + S.towers.length;
   if (key === lastKey) return;
   lastKey = key;
@@ -31,8 +37,14 @@ export function hud() {
 
   for (const card of refs.shop.children) {
     const d = TOWERS[card.dataset.k];
+    const picked = S.build === card.dataset.k;
     card.classList.toggle('poor', S.focus < d.cost);
-    card.classList.toggle('sel', S.build === card.dataset.k);
+    card.classList.toggle('sel', picked);
+    card.setAttribute('aria-pressed', picked ? 'true' : 'false');
+    card.setAttribute('aria-label', picked
+      ? d.name + ', ' + d.cost + ' focus, selected. Tap a lit plot on the board '
+        + 'to place it, or this card again for what it does.'
+      : d.name + ', ' + d.cost + ' focus');
   }
 
   if (S.sel) fillInspect();
