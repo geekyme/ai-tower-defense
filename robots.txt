@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://geekyme.github.io/ai-tower-defense/sitemap.xml

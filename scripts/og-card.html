@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Share cards · Head of AI: defence</title>
+<!--
+  Source art for the social preview images.
+
+  Two 1200x630 cards, one per page of the site. Open this file in a browser and
+  screenshot each card, or render both with the one-liner in the README:
+
+    node scripts/render-og.mjs
+
+  The rendered PNGs live at assets/og-game.png and assets/og-playbook.png and
+  are what index.html and lessons.html point og:image at.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #03050b;
+    --text: #e9effb;
+    --dim: #7d92b5;
+    --body: #9db0cd;
+    --cyan: #35e6d5;
+    --violet: #a379ff;
+    --amber: #ffc24b;
+    --mint: #6ee7a0;
+    --coral: #ff6b6b;
+    --orange: #ff8a4b;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: #11151d;
+    font-family: 'Sora', ui-sans-serif, system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    padding: 32px;
+  }
+
+  .card {
+    position: relative;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background:
+      radial-gradient(900px 620px at 88% 108%, rgba(53, 230, 213, .20), transparent 70%),
+      radial-gradient(820px 560px at 4% -12%, rgba(163, 121, 255, .28), transparent 68%),
+      linear-gradient(150deg, #0c1424 0%, #070d1a 52%, #04070e 100%);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+  }
+
+  /* The board sits behind everything on the right, bleeding off the edge. */
+  .board { position: absolute; right: -60px; top: -40px; opacity: .9; }
+
+  .body {
+    position: relative;
+    padding: 0 72px;
+    width: 720px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: .16em;
+    color: var(--cyan);
+    margin-bottom: 22px;
+  }
+  .eyebrow svg { flex: 0 0 auto; }
+
+  h1 {
+    font-size: 62px;
+    font-weight: 700;
+    letter-spacing: -.028em;
+    line-height: 1.06;
+  }
+
+  .sub {
+    font-size: 25px;
+    font-weight: 400;
+    line-height: 1.44;
+    color: var(--body);
+    margin-top: 20px;
+    max-width: 570px;
+  }
+  .sub b { color: var(--text); font-weight: 600; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 26px; max-width: 580px; }
+  .chip {
+    font-size: 17px;
+    font-weight: 500;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(43, 61, 94, .95);
+    background: rgba(255, 255, 255, .035);
+    color: #c9d6ea;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .chip i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+
+  .foot {
+    margin-top: 30px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(43, 61, 94, .8);
+    max-width: 580px;
+    font-size: 19px;
+    font-weight: 500;
+    color: var(--dim);
+  }
+  .foot span { color: var(--cyan); }
+  .foot em { font-style: normal; color: #4d5f7d; }
+</style>
+</head>
+<body>
+
+<!-- assets/og-game.png -->
+<div class="card" id="game">
+  <svg class="board" width="620" height="710" viewBox="0 0 620 710" fill="none" aria-hidden="true">
+    <g opacity=".4" stroke="#2b3d5e" stroke-width="1.7">
+      <!-- 9 x 14 board, the same grid the game plays on -->
+      <g id="cols">
+        <path d="M40 30V690M104 30V690M168 30V690M232 30V690M296 30V690M360 30V690M424 30V690M488 30V690M552 30V690"/>
+      </g>
+      <path d="M40 30H552M40 94H552M40 158H552M40 222H552M40 286H552M40 350H552M40 414H552M40 478H552M40 542H552M40 606H552M40 670H552"/>
+    </g>
+    <!-- the lane threats walk down -->
+    <path d="M104 30V190H424V350H168V510H488V690" stroke="#35e6d5" stroke-opacity=".16" stroke-width="46" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M104 30V190H424V350H168V510H488V690" stroke="#35e6d5" stroke-opacity=".38" stroke-width="2" stroke-linejoin="round" stroke-dasharray="10 12"/>
+    <!-- defences on the board, with their range -->
+    <g fill="none" stroke-width="1.6" stroke-dasharray="5 7">
+      <circle cx="232" cy="126" r="60" stroke="#ffc24b" stroke-opacity=".3"/>
+      <circle cx="488" cy="254" r="76" stroke="#35e6d5" stroke-opacity=".3"/>
+      <circle cx="296" cy="446" r="118" stroke="#a379ff" stroke-opacity=".26"/>
+      <circle cx="360" cy="574" r="70" stroke="#ff6b6b" stroke-opacity=".3"/>
+      <circle cx="104" cy="318" r="70" stroke="#6ee7a0" stroke-opacity=".3"/>
+    </g>
+    <g>
+      <circle cx="232" cy="126" r="21" fill="#ffc24b" fill-opacity=".2" stroke="#ffc24b" stroke-width="2.4"/>
+      <circle cx="232" cy="126" r="6.5" fill="#ffc24b"/>
+      <circle cx="488" cy="254" r="21" fill="#35e6d5" fill-opacity=".2" stroke="#35e6d5" stroke-width="2.4"/>
+      <circle cx="488" cy="254" r="6.5" fill="#35e6d5"/>
+      <circle cx="296" cy="446" r="21" fill="#a379ff" fill-opacity=".2" stroke="#a379ff" stroke-width="2.4"/>
+      <circle cx="296" cy="446" r="6.5" fill="#a379ff"/>
+      <circle cx="360" cy="574" r="21" fill="#ff6b6b" fill-opacity=".2" stroke="#ff6b6b" stroke-width="2.4"/>
+      <circle cx="360" cy="574" r="6.5" fill="#ff6b6b"/>
+      <circle cx="104" cy="318" r="21" fill="#6ee7a0" fill-opacity=".2" stroke="#6ee7a0" stroke-width="2.4"/>
+      <circle cx="104" cy="318" r="6.5" fill="#6ee7a0"/>
+    </g>
+    <!-- threats walking the lane -->
+    <g fill="#ff6b6b">
+      <circle cx="104" cy="94" r="10" fill-opacity=".9"/>
+      <circle cx="360" cy="190" r="10" fill-opacity=".75"/>
+      <circle cx="168" cy="414" r="10" fill-opacity=".6"/>
+    </g>
+  </svg>
+
+  <div class="body">
+    <div class="eyebrow">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 4l10 4.5v7.2C26 22.5 21.8 27 16 28.6 10.2 27 6 22.5 6 15.7V8.5z" fill="none" stroke="#35e6d5" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M11.4 16.2l3.4 3.4 6.2-7" fill="none" stroke="#a379ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      HEAD OF AI
+    </div>
+    <h1>Head of AI:<br>defence</h1>
+    <p class="sub">A tower defence game about running AI inside a company. <b>25 waves, 37 failure modes, 6 controls.</b></p>
+    <div class="chips">
+      <div class="chip" style="color:#ff6b6b"><i></i>hallucinations</div>
+      <div class="chip" style="color:#35e6d5"><i></i>shadow AI</div>
+      <div class="chip" style="color:#ffc24b"><i></i>prompt injection</div>
+      <div class="chip" style="color:#a379ff"><i></i>the frozen middle</div>
+      <div class="chip" style="color:#6ee7a0"><i></i>EU AI Act audit</div>
+    </div>
+    <div class="foot">Free in the browser <em>·</em> <span>every wave you clear unlocks a lesson</span></div>
+  </div>
+</div>
+
+<!-- assets/og-playbook.png -->
+<div class="card playbook" id="playbook">
+  <svg class="board" width="620" height="710" viewBox="0 0 620 710" fill="none" aria-hidden="true">
+    <g opacity=".4" stroke="#2b3d5e" stroke-width="1.7">
+      <path d="M40 30V690M104 30V690M168 30V690M232 30V690M296 30V690M360 30V690M424 30V690M488 30V690M552 30V690"/>
+      <path d="M40 30H552M40 94H552M40 158H552M40 222H552M40 286H552M40 350H552M40 414H552M40 478H552M40 542H552M40 606H552M40 670H552"/>
+    </g>
+    <!-- 25 lesson tiles, the first sixteen unlocked -->
+    <g>
+      <g fill="#35e6d5" fill-opacity=".16" stroke="#35e6d5" stroke-opacity=".55" stroke-width="2">
+        <rect x="72" y="120" width="86" height="86" rx="18"/>
+        <rect x="182" y="120" width="86" height="86" rx="18"/>
+        <rect x="292" y="120" width="86" height="86" rx="18"/>
+        <rect x="402" y="120" width="86" height="86" rx="18"/>
+        <rect x="72" y="230" width="86" height="86" rx="18"/>
+        <rect x="182" y="230" width="86" height="86" rx="18"/>
+        <rect x="292" y="230" width="86" height="86" rx="18"/>
+        <rect x="402" y="230" width="86" height="86" rx="18"/>
+      </g>
+      <g fill="#a379ff" fill-opacity=".16" stroke="#a379ff" stroke-opacity=".55" stroke-width="2">
+        <rect x="72" y="340" width="86" height="86" rx="18"/>
+        <rect x="182" y="340" width="86" height="86" rx="18"/>
+        <rect x="292" y="340" width="86" height="86" rx="18"/>
+        <rect x="402" y="340" width="86" height="86" rx="18"/>
+      </g>
+      <g fill="#ffffff" fill-opacity=".03" stroke="#2b3d5e" stroke-width="2">
+        <rect x="72" y="450" width="86" height="86" rx="18"/>
+        <rect x="182" y="450" width="86" height="86" rx="18"/>
+        <rect x="292" y="450" width="86" height="86" rx="18"/>
+        <rect x="402" y="450" width="86" height="86" rx="18"/>
+        <rect x="72" y="560" width="86" height="86" rx="18"/>
+        <rect x="182" y="560" width="86" height="86" rx="18"/>
+        <rect x="292" y="560" width="86" height="86" rx="18"/>
+        <rect x="402" y="560" width="86" height="86" rx="18"/>
+      </g>
+      <g stroke="#35e6d5" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".8">
+        <path d="M98 163l16 16 30-32"/><path d="M208 163l16 16 30-32"/><path d="M318 163l16 16 30-32"/><path d="M428 163l16 16 30-32"/>
+        <path d="M98 273l16 16 30-32"/><path d="M208 273l16 16 30-32"/><path d="M318 273l16 16 30-32"/><path d="M428 273l16 16 30-32"/>
+      </g>
+      <g stroke="#a379ff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity=".8">
+        <path d="M98 383l16 16 30-32"/><path d="M208 383l16 16 30-32"/><path d="M318 383l16 16 30-32"/><path d="M428 383l16 16 30-32"/>
+      </g>
+      <g stroke="#3a4a68" stroke-width="4" fill="none" opacity=".9">
+        <path d="M103 490h24M213 490h24M323 490h24M433 490h24"/>
+        <path d="M103 600h24M213 600h24M323 600h24M433 600h24"/>
+      </g>
+    </g>
+  </svg>
+
+  <div class="body">
+    <div class="eyebrow">
+      <svg width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 4l10 4.5v7.2C26 22.5 21.8 27 16 28.6 10.2 27 6 22.5 6 15.7V8.5z" fill="none" stroke="#35e6d5" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M11.4 16.2l3.4 3.4 6.2-7" fill="none" stroke="#a379ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      HEAD OF AI
+    </div>
+    <h1>The playbook</h1>
+    <p class="sub">25 lessons on running AI inside a company, <b>one per wave you survive</b>, from the first pilot to the EU AI Act audit.</p>
+    <div class="chips">
+      <div class="chip" style="color:#ffc24b"><i></i>evals</div>
+      <div class="chip" style="color:#6ee7a0"><i></i>guardrails</div>
+      <div class="chip" style="color:#35e6d5"><i></i>observability</div>
+      <div class="chip" style="color:#ff8a4b"><i></i>model routing</div>
+      <div class="chip" style="color:#a379ff"><i></i>AI governance</div>
+      <div class="chip" style="color:#ff6b6b"><i></i>kill switch</div>
+    </div>
+    <div class="foot">Head of AI: defence <em>·</em> <span>a free browser tower defence game</span></div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -38,6 +38,33 @@ push to `main`. Every path in the HTML is relative, so it works at a project URL
 use Actions, setting Pages to *Deploy from a branch → main → / (root)* also works —
 `.nojekyll` is already there so Jekyll leaves the files alone.
 
+## Sharing and discovery
+
+Both pages carry a full set of Open Graph and Twitter card tags, a canonical link,
+and JSON-LD (`VideoGame` on the game, `CollectionPage` on the playbook), so a pasted
+link renders as a large card on LinkedIn, X, Slack, Discord, iMessage and WhatsApp
+rather than as a bare URL. `robots.txt` and `sitemap.xml` sit at the root.
+
+Social crawlers do not reliably resolve relative image URLs, so `og:image`, `og:url`
+and the canonical links are absolute and hardcoded to
+`https://geekyme.github.io/ai-tower-defense/`. **If the site moves to another domain,
+search and replace that origin** in `index.html`, `lessons.html`, `robots.txt` and
+`sitemap.xml`.
+
+The preview images are `assets/og-game.png` and `assets/og-playbook.png`, both
+1200x630. Their source is `scripts/og-card.html`, a plain HTML file with no
+dependencies: open it in a browser and screenshot each card, or render both cards and
+the PNG touch icons at once with
+
+```bash
+npm i -g playwright && npx playwright install chromium
+node scripts/render-og.mjs
+```
+
+That script is the only thing in the repo that wants a dependency, it is optional, and
+nothing the site serves needs it. Re-run it when the card art or the favicon changes,
+and commit the PNGs.
+
 ## Responsive layouts
 
 The board is a fixed 9x14 portrait grid, so its size is almost always limited by
@@ -74,6 +101,15 @@ about five seconds and runs in CI before every deploy.
 ```
 index.html            the game
 lessons.html          the playbook, unlocked wave by wave
+site.webmanifest      name, icons and colours for install-to-home-screen
+robots.txt            crawl policy, points at the sitemap
+sitemap.xml           the two pages
+assets/
+  favicon.svg         the shield mark
+  icon-180.png        apple-touch-icon, rendered from the favicon
+  icon-512.png        manifest icon, rendered from the favicon
+  og-game.png         1200x630 social card for the game
+  og-playbook.png     1200x630 social card for the playbook
 styles/
   tokens.css          colours, reset, and the components both pages share
   game.css            board, HUD, shop, overlays
@@ -95,7 +131,10 @@ src/
   render/             canvas drawing: shapes, board, entities, fx, scene
   ui/                 DOM: hud, shop, panels, screens, input, share card
   main.js             wiring and the game loop
-scripts/smoke.mjs     headless campaign test
+scripts/
+  smoke.mjs           headless campaign test
+  og-card.html        source art for the two social cards
+  render-og.mjs       renders the cards and the PNG icons (optional, dev only)
 ```
 
 Three rules keep it navigable:
