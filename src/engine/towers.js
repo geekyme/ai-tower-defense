@@ -58,16 +58,28 @@ export function sellValue(t) {
   return Math.floor(t.spent * SELL_REFUND);
 }
 
+/** The tower record, in one place: built here, paid for by the caller. */
+function makeTower(key, c, r, lv, spent) {
+  const d = TOWERS[key];
+  return {
+    key, def: d, c, r,
+    x: (c + 0.5) * cell, y: (r + 0.5) * cell,
+    lv, cd: d.rate, ang: -1.5708,
+    spent, rec: 0, stunT: 0, kind: '', spin: Math.random() * 6,
+  };
+}
+
+/** Puts a defence back on the board as it was, free. See `checkpoint.js`. */
+export function reviveTower({ key, c, r, lv, spent }) {
+  if (!TOWERS[key] || !canBuild(c, r)) return;
+  S.towers.push(makeTower(key, c, r, lv, spent));
+}
+
 export function placeTower(key, c, r) {
   const d = TOWERS[key];
   if (S.focus < d.cost) return false;
   S.focus -= d.cost;
-  S.towers.push({
-    key, def: d, c, r,
-    x: (c + 0.5) * cell, y: (r + 0.5) * cell,
-    lv: 1, cd: d.rate, ang: -1.5708,
-    spent: d.cost, rec: 0, stunT: 0, kind: '', spin: Math.random() * 6,
-  });
+  S.towers.push(makeTower(key, c, r, 1, d.cost));
   sfx.build();
   burst((c + 0.5) * cell, (r + 0.5) * cell, d.col, 12, cell * 2, 0.4);
   pulse((c + 0.5) * cell, (r + 0.5) * cell, d.range * cell, d.col);

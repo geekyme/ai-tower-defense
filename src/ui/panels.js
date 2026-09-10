@@ -11,12 +11,10 @@ import { glyph } from './glyphs.js';
  *   #preview  what a defence does, shown while you are choosing where to put it
  *   #inspect  what a placed defence is doing now, with upgrade and sell
  *
- * The preview stays a one-line strip that pointer events fall straight through
- * (see `#preview` in game.css), so reading about a defence never takes the
- * board away from you. Everything below that line only opens on request.
+ * The preview opens only when asked for — tap the card you already have
+ * selected — so choosing where to put a defence never costs you sight of the
+ * board. Any tap outside closes it again.
  */
-
-let detailed = false;
 
 function paintDot(node, key, colour, px) {
   node.style.background = 'rgba(255,255,255,.06)';
@@ -55,35 +53,15 @@ export function showPreview(key) {
 
   const hint = el('pvHint');
   hint.textContent = short > 0
-    ? short + ' focus short. Sell something, or wait for a kill.'
-    : detailed ? notes.hint : 'Tap a lit plot to place it.';
+    ? 'You are ' + short + ' focus short. Sell a defence you are not using, or wait for a kill.'
+    : notes.hint;
   hint.classList.toggle('warn', short > 0);
 
   refs.preview.classList.add('show');
 }
 
-/** Opens or closes the long copy under the strip. */
-export function setPreviewDetails(open) {
-  detailed = !!open;
-  refs.preview.classList.toggle('open', detailed);
-  const btn = el('pvInfo');
-  btn.textContent = detailed ? 'Hide' : 'Details';
-  btn.setAttribute('aria-expanded', String(detailed));
-  if (S.build && isPreviewOpen()) showPreview(S.build);
-}
-
-export function togglePreviewDetails() {
-  setPreviewDetails(!detailed);
-}
-
-/** Folds the sheet back to its strip, leaving the chosen defence selected. */
-export function collapsePreview() {
-  if (detailed) setPreviewDetails(false);
-}
-
 export function hidePreview() {
   refs.preview.classList.remove('show');
-  setPreviewDetails(false);
 }
 
 export function showInspect(tower) {

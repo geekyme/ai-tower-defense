@@ -89,30 +89,24 @@ canvas#cv{display:block;border-radius:16px;touch-action:none}
 
 
 /*
- * Two states. Closed it is a strip: name, cost and one line of guidance, and
- * `pointer-events:none` so a tap on it still lands on the plot underneath.
- * Open it is a full sheet, which takes its taps back until you close it again.
+ * Only ever open because you asked for it — a tap on the card you already have
+ * selected — and any tap outside closes it, so it is never between you and a
+ * plot you were aiming for.
  */
-#preview{display:none;pointer-events:none;padding:8px 10px;border-radius:14px;
-  background:linear-gradient(180deg,rgba(19,28,46,.97),rgba(9,14,25,.97));border:1px solid var(--line2);
+#preview{display:none;pointer-events:auto;padding:11px 12px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(19,28,46,.98),rgba(9,14,25,.98));border:1px solid var(--line2);
   backdrop-filter:blur(10px);box-shadow:0 14px 40px rgba(0,0,0,.6)}
 #preview.show{display:block}
-#preview.open{pointer-events:auto;padding:11px 12px}
-#pvInfo,#pvX{pointer-events:auto}
-#preview .r1{display:flex;align-items:center;gap:7px}
+#preview .r1{display:flex;align-items:center;gap:7px;margin-bottom:6px}
 #pvDot{width:26px;height:26px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center}
 #pvName{font-size:13px;font-weight:600;line-height:1.25;flex:1 1 60px;min-width:0}
 #pvCost{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 #pvCost.poor{color:#ff8a95}
-#pvInfo{flex:0 0 auto;height:24px;padding:0 10px;border-radius:20px;border:1px solid var(--line2);
-  background:rgba(255,255,255,.04);color:var(--dim);font-family:inherit;font-size:10px;font-weight:600;cursor:pointer}
-#preview.open #pvInfo{color:var(--cyan);border-color:#20514f;background:rgba(53,230,213,.09)}
 #pvX{width:24px;height:24px;flex:0 0 auto;border-radius:8px;border:1px solid var(--line2);
   background:rgba(255,255,255,.04);color:var(--dim);font-family:inherit;font-size:11px;cursor:pointer}
-#pvHint{font-size:10px;color:var(--dim);line-height:1.4;margin-top:5px}
+#pvHint{font-size:10px;color:var(--dim);line-height:1.45;margin-top:8px;padding-top:7px;
+  border-top:1px solid rgba(43,61,94,.6)}
 #pvHint.warn{color:#ff9aa4}
-#pvMore{display:none}
-#preview.open #pvMore{display:block;margin-top:8px;padding-top:8px;border-top:1px solid rgba(43,61,94,.6)}
 #pvBlurb{font-size:11.5px;color:#9db0cd;line-height:1.5;margin-bottom:7px}
 #pvNums{font-size:10.5px;color:var(--dim);display:flex;gap:11px;flex-wrap:wrap;margin-bottom:8px}
 #pvNums i{font-style:normal;color:var(--text);font-weight:600}
@@ -366,7 +360,6 @@ canvas#cv{display:block;border-radius:16px;touch-action:none}
   }
   #dock > * { width: 100%; }
   #callRow { flex-wrap: wrap; }
-  #preview { pointer-events: auto; }
   #preview, #inspect { max-height: calc(100vh - 120px); }
 }
 
@@ -388,15 +381,13 @@ canvas#cv{display:block;border-radius:16px;touch-action:none}
   }
   #dock > * { width: 100%; }
   #callRow { flex-wrap: wrap; }
-  /* Beside the board, not over it, so the strip can keep its own taps. */
-  #preview { pointer-events: auto; }
   #preview, #inspect { max-height: calc(var(--board-h, 70vh) - 20px); }
 
   /* The board is short here, so the sheets beside it still have to be terse. */
-  #preview.open, #inspect { padding: 9px 10px; font-size: 10.5px; }
+  #preview, #inspect { padding: 9px 10px; font-size: 10.5px; }
   #pvBlurb, #insBlurb { font-size: 10.5px; margin-bottom: 5px; }
   #pvNums, #insNums, #pvHint { font-size: 9.5px; }
-  #pvHint { margin-top: 4px; }
+  #pvHint { margin-top: 6px; padding-top: 5px; }
   .pvline { font-size: 10.5px; margin-bottom: 3px; }
   #preview .tg { margin-bottom: 6px; }
   #hud { padding: 6px 10px 4px 4px; }

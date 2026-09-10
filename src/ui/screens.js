@@ -7,6 +7,7 @@ import { sfx } from '../core/audio.js';
 import { progress, recordSession, unlockedCount } from '../core/storage.js';
 import { scale } from '../engine/spawn.js';
 import { startWave, nextBrief, beginBuildPhase } from '../engine/waves.js';
+import { hasCheckpoint, retryWave, clearCheckpoint } from '../engine/checkpoint.js';
 import { threatThumbnail } from '../render/shapes.js';
 import { el, refs, esc } from './dom.js';
 import { buildShop } from './shop.js';
@@ -103,6 +104,7 @@ export function briefing() {
 
 export function menu() {
   newRun();
+  clearCheckpoint();
   layout();
   buildShop();
   invalidateHud();
@@ -121,6 +123,7 @@ export function menu() {
     '<p class="kick">Twenty five waves across five eras, then it never stops. The problems change as you get better at the job.</p>' +
     resume +
     '<p class="lore">Threats walk from <b>inbound</b> to <b>you</b>. Kills pay <b>focus</b>. Anything that lands costs <b>sanity</b>, and you only have sixteen.</p>' +
+    '<p class="lore">Tap a defence to pick it, then tap a lit plot to place it. Tap the same defence again to read what it is for.</p>' +
     '<p class="lore">Every defence has one thing it is the only answer to. Read the briefing before each wave, because armour, invisibility and immunity are all counters to a specific choice you made earlier.</p>' +
     '<p class="lore">Bosses freeze, downgrade, hijack and permanently delete your defences. Anything you build in one tidy cluster will be gone by era four.</p>' +
     '<p class="lore">Every wave you clear unlocks one lesson in <b>the playbook</b>. Clear all twenty five and the whole thing is yours.</p>' +
@@ -161,7 +164,9 @@ function statBlock() {
   return '<div id="ovStats">' +
     '<div><b style="color:#35e6d5">' + S.killed + '</b><span>handled</span></div>' +
     '<div><b style="color:#ff6b6b">' + S.leaked + '</b><span>got through</span></div>' +
-    '<div><b style="color:#a379ff">' + S.lost + '</b><span>defences lost</span></div></div>';
+    '<div><b style="color:#a379ff">' + S.lost + '</b><span>defences lost</span></div>' +
+    (S.retries ? '<div><b style="color:#ffc24b">' + S.retries + '</b><span>waves retried</span></div>' : '') +
+    '</div>';
 }
 
 /**
@@ -179,6 +184,7 @@ function endSession(outcome) {
     handled: S.killed,
     leaked: S.leaked,
     defencesLost: S.lost,
+    retries: S.retries,
     sanity: S.sanity,
     maxSanity: S.max,
     towers: [...new Set(S.towers.map(t => t.key))],
@@ -206,16 +212,36 @@ export function defeat() {
       ? 'You already have the full playbook.'
       : 'You have ' + got + ' of ' + CAMPAIGN_WAVES + ' lessons. Every wave you clear keeps one more, permanently.';
 
+  // A defeat costs you the wave, not the run: the retry rewinds to the moment
+  // this wave's briefing ended, with the focus and the board you had then.
+  const canRetry = hasCheckpoint();
+  const retry = canRetry
+    ? '<p class="lore">Go again from the top of this wave: the defences and the focus you' +
+      ' started it with, and your sanity back to ' + S.max + '. Build it differently.</p>' +
+      '<button id="retry" type="button">Try wave ' + S.wave + ' again</button>'
+    : '';
+
   openOverlay(
     '<div class="eyebrow"><b>' + esc(waveEra(Math.min(S.wave, CAMPAIGN_WAVES)).n) + '</b><i></i></div>' +
     '<h1 class="md">Burnt out<em>wave ' + S.wave + (S.endless ? '' : ' of ' + CAMPAIGN_WAVES) + '</em></h1>' +
     '<p class="kick">' + esc(waveTitle(S.wave)) + '</p>' + statBlock() + progressHTML() +
     '<p class="lore">' + push +
       (left > 0 ? ' Everything that just killed you has a counter written down in there.' : '') + '</p>' +
-    '<button id="again" type="button">Run it back' + (left > 0 ? ' · ' + left + ' lessons to go' : '') + '</button>' +
+    retry +
+    '<button' + (canRetry ? ' class="ghost"' : '') + ' id="again" type="button">Start a new run' +
+      (left > 0 && !canRetry ? ' · ' + left + ' lessons to go' : '') + '</button>' +
     playbookLink() +
     '<button class="ghost" id="snap" type="button">Save result card</button>');
 
+  if (canRetry) {
+    el('retry').onclick = () => {
+      closeOverlay();
+      refs.callRow.classList.add('hidden');
+      if (!retryWave()) menu();
+      invalidateHud();
+      hud();
+    };
+  }
   el('again').onclick = () => { closeOverlay(); menu(); };
   el('snap').onclick = shareCard;
 }

@@ -13,6 +13,10 @@ control you skipped.
 **Clearing a wave permanently unlocks that wave's lesson** in [the playbook](lessons.html).
 Twenty five waves, twenty five lessons, and the full list once you finish the campaign.
 
+Burning out costs you the wave rather than the run: every briefing leaves a checkpoint
+behind, so a defeat offers the same wave again with the board and the focus you started
+it with, and your sanity back.
+
 No build step, no dependencies, no server — static files and ES modules.
 
 ## Running it locally
@@ -78,11 +82,16 @@ only which grid area they land in — so the three layouts are pure CSS:
 | ≥ 900px wide, or landscape under 620px tall | HUD and shop in a side rail, board takes the full height | 567x882 at 1440x900 |
 
 Everything that floats over the board lives in one bottom dock, stacked in a column, so
-the build sheets and the call-wave row can never cover each other. Where there is room
-the dock leaves the board alone entirely: on a phone it spends the letterboxing under
-the board, on a rail layout it moves into the empty column below the shop, and in short
-landscape the board shifts left and the dock sits beside it — a sheet across a 243px
-board hides the whole game.
+the sheets and the call-wave row can never cover each other. Where there is room the dock
+leaves the board alone entirely: on a phone it spends the letterboxing under the board, on
+a rail layout it moves into the empty column below the shop, and in short landscape the
+board shifts left and the dock sits beside it — a sheet across a 243px board hides the
+whole game.
+
+Choosing a defence puts nothing over the board at all. The card lights up, every plot you
+could build on lights up with it, and that is the whole interface: the lower rows stay
+reachable. What a defence is *for* is a sheet you ask for — tap the card you already have
+selected — and any tap outside closes it again.
 
 `layout()` in `core/view.js` publishes the measured board size as `--board-w` and
 `--board-h` on the stage, which is what keeps the floating sheets and the call-wave row
@@ -118,8 +127,9 @@ node scripts/smoke.mjs 25
 
 Runs the whole 25-wave campaign headlessly: it stubs the DOM, plays the simulation at a
 fixed timestep with a scripted build order, draws every frame through a stub 2D context,
-renders all 37 threat artworks, and asserts that waves advance and lessons unlock one per
-wave in order. It catches the things that break when the data files are edited. Takes
+renders all 37 threat artworks, and asserts that waves advance, that lessons unlock one
+per wave in order, and that retrying a wave hands back exactly the board and the focus it
+started with. It catches the things that break when the data files are edited. Takes
 about five seconds and runs in CI before every deploy.
 
 ## Project structure
@@ -155,6 +165,7 @@ src/
     music.js          the soundtrack: a step sequencer, also without files
     bus.js            engine → UI events, so the engine imports no UI
   engine/             the simulation: spawn, damage, powers, foes, towers, waves
+    checkpoint.js     the start of the current wave, for retrying after a defeat
   render/             canvas drawing: shapes, board, entities, fx, scene
   ui/                 DOM: hud, shop, panels, screens, input, share card
   main.js             wiring and the game loop
@@ -178,14 +189,22 @@ Three rules keep it navigable:
 
 ## Sound
 
-Neither the effects nor the soundtrack load a file. `core/audio.js` is one oscillator
-per blip with a decaying gain envelope; `core/music.js` is a sixteenth-note sequencer
-that schedules pad, bass, arpeggio and drum voices a fraction of a second ahead of the
-audio clock, over four bars in A minor. It has two moods and the run's own events switch
-them: `calm` for menus, briefings and the build phase, `combat` while a wave is running.
-Both share one AudioContext, created on the first tap because browsers keep a page
-silent until then, and one `♪` in the HUD switches both. A backgrounded tab stops the
-loop rather than playing to nobody.
+Neither the effects nor the soundtrack load a file. `core/audio.js` is one oscillator per
+blip with a decaying gain envelope. `core/music.js` is a sixteenth-note sequencer that
+schedules its voices a fraction of a second ahead of the audio clock, over four bars of
+ii–V–I–vi in C voiced as rootless sevenths.
+
+It is lo-fi mostly by subtraction: the whole mix runs through one lowpass at 2.1kHz so
+nothing is bright, the off sixteenths land late so nothing sits on the grid, and vinyl
+crackle runs underneath it all. Two moods, switched by the run's own events — `calm` is
+keys, bass and crackle for menus, briefings and the build phase; `combat` brings in a
+soft kick, a brushed snare and hats while a wave runs. Measured at the destination it
+sits around −37 dBFS between waves and −30 during one, with 85–90% of its energy below
+2kHz.
+
+Both share one AudioContext, created on the first tap because browsers keep a page silent
+until then, and one `♪` in the HUD switches both. A backgrounded tab stops the loop rather
+than playing to nobody.
 
 ## Adding content
 

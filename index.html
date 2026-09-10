@@ -100,24 +100,21 @@
       </div>
 
       <!--
-        What a defence does, shown while choosing where to place it. It stays a
-        one-line strip that taps fall straight through, so choosing a defence
-        never costs you sight of the board. Details open on request.
+        What a defence does. Nothing covers the board while you are simply
+        choosing where to put one: this opens only when you tap the card you
+        already have selected, and any tap outside closes it again.
       -->
       <div id="preview">
         <div class="r1">
           <div id="pvDot"></div><div id="pvName"></div><div id="pvCost"></div>
-          <button id="pvInfo" type="button" aria-controls="pvMore" aria-expanded="false">Details</button>
-          <button id="pvX" type="button" aria-label="Cancel">✕</button>
+          <button id="pvX" type="button" aria-label="Close">✕</button>
         </div>
+        <div id="pvBlurb"></div>
+        <div id="pvNums"></div>
+        <div class="tg" id="pvTags"></div>
+        <div class="pvline good"><u>Use for</u><div id="pvGood"></div></div>
+        <div class="pvline weak"><u>Blind to</u><div id="pvWeak"></div></div>
         <div id="pvHint"></div>
-        <div id="pvMore">
-          <div id="pvBlurb"></div>
-          <div id="pvNums"></div>
-          <div class="tg" id="pvTags"></div>
-          <div class="pvline good"><u>Use for</u><div id="pvGood"></div></div>
-          <div class="pvline weak"><u>Blind to</u><div id="pvWeak"></div></div>
-        </div>
       </div>
 
       <!-- A placed defence: live stats, upgrade and sell. -->
