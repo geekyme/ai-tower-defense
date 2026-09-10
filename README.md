@@ -98,6 +98,11 @@ could build on lights up with it, and that is the whole interface: the lower row
 reachable. What a defence is *for* is a sheet you ask for — tap the card you already have
 selected — and any tap outside closes it again.
 
+The shop is the one part of the layout that sits outside the board, so an overlay cannot
+cover it. While a screen is up, or a wave is being celebrated, `#app.screen` recedes it
+and takes it out of play: otherwise it stays lit under every menu and briefing, and a
+defence picked from behind one leaves its sheet on the board afterwards.
+
 `layout()` in `core/view.js` publishes the measured board size as `--board-w` and
 `--board-h` on the stage, which is what keeps the floating sheets and the call-wave row
 pinned to the board rather than stretching across a much wider stage on desktop.

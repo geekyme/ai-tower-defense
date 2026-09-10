@@ -118,7 +118,10 @@ canvas#cv{display:block;border-radius:16px;touch-action:none}
 .pvline.good u{color:var(--mint)}.pvline.good div{color:#9fd6b6}
 .pvline.weak u{color:var(--coral)}.pvline.weak div{color:#d5a3ab}
 
-#shop{grid-area:shop;display:flex;gap:6px;padding:7px 9px 11px;overflow-x:auto;scrollbar-width:none}
+#shop{grid-area:shop;display:flex;gap:6px;padding:7px 9px 11px;overflow-x:auto;scrollbar-width:none;
+  transition:opacity .25s}
+/* A screen, or a wave clearing, takes the shop out of play until it is done. */
+#app.screen #shop{opacity:.25;pointer-events:none}
 #shop::-webkit-scrollbar{display:none}
 .card{position:relative;flex:0 0 84px;cursor:pointer;text-align:left;font-family:inherit;color:var(--text);
   padding:7px;border-radius:14px;border:1px solid var(--line);overflow:hidden;

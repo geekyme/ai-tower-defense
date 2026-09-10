@@ -18,16 +18,31 @@ import { shareRun, saveCard } from './share-card.js';
 import { toast } from './toast.js';
 import { creditHTML } from './credit.js';
 
+/**
+ * Recedes the shop while something else owns the screen — a menu, a briefing,
+ * a result, or the moment a wave is cleared. The shop sits outside the board
+ * in the layout, so without this it stays lit and tappable underneath every
+ * screen, and a defence picked from behind one leaves its sheet on the board.
+ */
+function holdScreen(held) {
+  refs.app.classList.toggle('screen', held);
+  if (held) {
+    hidePreview();
+    hideInspect();
+  }
+}
+
 /** Full-board overlay used by every screen. */
 function openOverlay(html) {
   refs.overlayBox.innerHTML = html;
-  hidePreview();
+  holdScreen(true);
   refs.overlay.classList.add('show');
   refs.overlayScroll.scrollTop = 0;
 }
 
 function closeOverlay() {
   refs.overlay.classList.remove('show');
+  holdScreen(false);
 }
 
 /* --------------------------------------------------------------- briefing */
@@ -291,6 +306,9 @@ export function initScreens() {
   on('run:lost', defeat);
   on('run:won', victory);
   on('wave:cleared', ({ lesson }) => {
+    // The celebration owns the board for a couple of seconds; nothing should
+    // be sitting on top of it or lit up beneath it.
+    holdScreen(true);
     if (!lesson) return;
     // A beat behind the celebration, so the two land as two moments.
     setTimeout(() => {

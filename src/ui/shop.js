@@ -37,6 +37,11 @@ export function buildShop() {
  * details, and while those are open, tapping any card shows that one's.
  */
 export function selectTower(key) {
+  // The shop is dimmed behind a screen, but a stray tap must not get through
+  // it either: a defence chosen from behind a briefing is a defence you did
+  // not mean to choose.
+  if (S.phase !== 'build' && S.phase !== 'wave') return;
+
   const open = isPreviewOpen();
   const same = S.build === key;
 
