@@ -115,7 +115,12 @@ let finished = false;
 
 on('wave:cleared', ({ lesson }) => { if (lesson) unlocks.push(lesson.wave); });
 on('run:lost', () => { failures.push('sanity hit zero on wave ' + S.wave); finished = true; });
-on('run:won', () => { finished = true; });
+on('run:won', () => {
+  // Past the campaign the game is supposed to keep going. Asking for more
+  // waves than there are is what tests that it does.
+  if (targetWaves > CAMPAIGN_WAVES) nextBrief();
+  else finished = true;
+});
 on('run:brief', () => {
   beginBuildPhase();
   // This is a code-path test, not a balance test: the harness plays with a
@@ -167,11 +172,14 @@ while (!finished && S.wave <= targetWaves && frames < MAX_FRAMES) {
 /* --------------------------------------------------------------- report */
 
 const reached = S.best;
-const expected = Array.from({ length: reached }, (_, i) => i + 1);
+const expected = Array.from({ length: Math.min(reached, CAMPAIGN_WAVES) }, (_, i) => i + 1);
 const problems = [...early];
 
 if (frames >= MAX_FRAMES) problems.push('simulation did not settle within ' + MAX_FRAMES + ' frames');
 if (reached === 0) problems.push('no wave was cleared');
+if (targetWaves > CAMPAIGN_WAVES && reached <= CAMPAIGN_WAVES && !failures.length) {
+  problems.push('the run stopped at wave ' + reached + ' instead of carrying on past the campaign');
+}
 if (String(unlocks) !== String(expected)) {
   problems.push('lessons unlocked ' + JSON.stringify(unlocks) + ', expected ' + JSON.stringify(expected));
 }
@@ -179,7 +187,8 @@ if (String(progress.unlockedLessons) !== String(expected)) {
   problems.push('stored unlocks ' + JSON.stringify(progress.unlockedLessons) + ' do not match');
 }
 
-console.log('waves cleared      ', reached + ' of ' + Math.min(targetWaves, CAMPAIGN_WAVES));
+console.log('waves cleared      ', reached + ' of ' + targetWaves +
+  (reached > CAMPAIGN_WAVES ? '  (endless ' + (reached - CAMPAIGN_WAVES) + ')' : ''));
 console.log('lessons unlocked   ', unlocks.length);
 console.log('threats handled    ', S.killed, '| leaked', S.leaked, '| defences lost', S.lost);
 console.log('sanity left        ', S.sanity + '/' + S.max);

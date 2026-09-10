@@ -17,6 +17,11 @@ Burning out costs you the wave rather than the run: every briefing leaves a chec
 behind, so a defeat offers the same wave again with the board and the focus you started
 it with, and your sanity back.
 
+Past wave 25 it keeps going for as long as you can hold it. Endless waves are improvised
+from the campaign's threat pool with a boss every third one, and threat health keeps
+climbing — gently enough that how far you get is a question about your board rather than
+a wall a few waves after the campaign ends.
+
 No build step, no dependencies, no server — static files and ES modules.
 
 ## Running it locally
@@ -129,7 +134,8 @@ Runs the whole 25-wave campaign headlessly: it stubs the DOM, plays the simulati
 fixed timestep with a scripted build order, draws every frame through a stub 2D context,
 renders all 37 threat artworks, and asserts that waves advance, that lessons unlock one
 per wave in order, and that retrying a wave hands back exactly the board and the focus it
-started with. It catches the things that break when the data files are edited. Takes
+started with. Ask it for more waves than the campaign has — `node scripts/smoke.mjs 34` —
+and it plays on into the endless ones, which is how the generated waves stay tested. It catches the things that break when the data files are edited. Takes
 about five seconds and runs in CI before every deploy.
 
 ## Project structure
@@ -167,7 +173,7 @@ src/
   engine/             the simulation: spawn, damage, powers, foes, towers, waves
     checkpoint.js     the start of the current wave, for retrying after a defeat
   render/             canvas drawing: shapes, board, entities, fx, scene
-  ui/                 DOM: hud, shop, panels, screens, input, share card
+  ui/                 DOM: hud, shop, panels, screens, input, toast, share card
   main.js             wiring and the game loop
 scripts/
   smoke.mjs           headless campaign test
@@ -186,6 +192,23 @@ Three rules keep it navigable:
 - **Shared state is a live binding.** `S` from `core/state.js` and `cell`/`W`/`H` from
   `core/view.js` are `export let`, so modules read the current value. Read them, never
   reassign them from outside their own module.
+
+## Sharing a run
+
+Both end screens offer **Share this run** and **Save the card**. The card is a 1080x1350
+PNG drawn on a canvas at the moment you ask for it, and it carries the wave you reached,
+the tally, the defences left standing, the lessons unlocked and the site's own address.
+
+Sharing hands that PNG to the native share sheet along with a message that is already
+written — how far the run got, what it cost, and a link back to the game. Where files
+cannot be shared it sends the message and the link alone; where there is no share sheet
+at all it saves the card and puts the message on the clipboard, and says so.
+
+The link comes from the page's own `<link rel="canonical">`, so it is right wherever the
+site is served from and there is no second copy of the URL to keep in step. One detail
+worth keeping: the card is built with the synchronous `toDataURL` rather than `toBlob`,
+because Safari drops the user gesture across an `await` and then refuses to open the
+share sheet.
 
 ## Sound
 

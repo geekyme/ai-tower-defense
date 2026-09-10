@@ -14,7 +14,8 @@ import { buildShop } from './shop.js';
 import { hud, invalidateHud } from './hud.js';
 import { hidePreview, hideInspect } from './panels.js';
 import { lessonListHTML, progressHTML } from './lesson-list.js';
-import { shareCard } from './share-card.js';
+import { shareRun, saveCard } from './share-card.js';
+import { toast } from './toast.js';
 import { creditHTML } from './credit.js';
 
 /** Full-board overlay used by every screen. */
@@ -196,6 +197,17 @@ function playbookLink() {
   return '<a class="btn ghost" href="lessons.html">Open the playbook</a>';
 }
 
+/** Send the run to someone, or keep the card. Both end screens offer both. */
+function shareButtons() {
+  return '<button class="ghost" id="send" type="button">Share this run</button>' +
+    '<button class="ghost" id="snap" type="button">Save the card</button>';
+}
+
+function wireShareButtons() {
+  el('send').onclick = shareRun;
+  el('snap').onclick = saveCard;
+}
+
 export function defeat() {
   if (S.phase === 'over') return;
   S.phase = 'over';
@@ -231,7 +243,7 @@ export function defeat() {
     '<button' + (canRetry ? ' class="ghost"' : '') + ' id="again" type="button">Start a new run' +
       (left > 0 && !canRetry ? ' · ' + left + ' lessons to go' : '') + '</button>' +
     playbookLink() +
-    '<button class="ghost" id="snap" type="button">Save result card</button>');
+    shareButtons());
 
   if (canRetry) {
     el('retry').onclick = () => {
@@ -243,7 +255,7 @@ export function defeat() {
     };
   }
   el('again').onclick = () => { closeOverlay(); menu(); };
-  el('snap').onclick = shareCard;
+  wireShareButtons();
 }
 
 export function victory() {
@@ -261,7 +273,7 @@ export function victory() {
     '<div class="rows lessons-inline">' + lessonListHTML({ size: 30 }) + '</div>' +
     '<button id="endless" type="button">Continue forever</button>' +
     playbookLink() +
-    '<button class="ghost" id="snap" type="button">Save result card</button>' +
+    shareButtons() +
     '<button class="ghost" id="menu2" type="button">New game</button>' +
     creditHTML());
 
@@ -269,23 +281,8 @@ export function victory() {
     closeOverlay();
     nextBrief();
   };
-  el('snap').onclick = shareCard;
+  wireShareButtons();
   el('menu2').onclick = () => { closeOverlay(); menu(); };
-}
-
-/* ------------------------------------------------------- lesson unlock toast */
-
-function toast(text, sub) {
-  const node = document.createElement('div');
-  node.className = 'toast';
-  node.innerHTML = '<b>' + esc(text) + '</b><span>' + esc(sub) + '</span>' +
-    '<a href="lessons.html">read</a>';
-  document.body.appendChild(node);
-  requestAnimationFrame(() => node.classList.add('in'));
-  setTimeout(() => {
-    node.classList.remove('in');
-    setTimeout(() => node.remove(), 400);
-  }, 4200);
 }
 
 /** Wires the engine's events to the screens. Call once at start-up. */
@@ -298,7 +295,7 @@ export function initScreens() {
     // A beat behind the celebration, so the two land as two moments.
     setTimeout(() => {
       sfx.unlock();
-      toast('Lesson ' + lesson.wave + ' unlocked', lesson.title);
+      toast('Lesson ' + lesson.wave + ' unlocked', lesson.title, { href: 'lessons.html', label: 'read' });
     }, 900);
   });
   on('wave:started', () => {
