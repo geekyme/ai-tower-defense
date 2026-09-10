@@ -77,8 +77,12 @@ only which grid area they land in — so the three layouts are pure CSS:
 | Portrait ≥ 620px | Same, wider column | 540x840 on an iPad |
 | ≥ 900px wide, or landscape under 620px tall | HUD and shop in a side rail, board takes the full height | 567x882 at 1440x900 |
 
-In short landscape the board also shifts left and the build sheets dock beside it
-rather than on top of it — a sheet across a 243px board hides the whole game.
+Everything that floats over the board lives in one bottom dock, stacked in a column, so
+the build sheets and the call-wave row can never cover each other. Where there is room
+the dock leaves the board alone entirely: on a phone it spends the letterboxing under
+the board, on a rail layout it moves into the empty column below the shop, and in short
+landscape the board shifts left and the dock sits beside it — a sheet across a 243px
+board hides the whole game.
 
 `layout()` in `core/view.js` publishes the measured board size as `--board-w` and
 `--board-h` on the stage, which is what keeps the floating sheets and the call-wave row
@@ -126,6 +130,7 @@ src/
     view.js           canvas sizing, the lane in pixels, resize handling
     storage.js        everything that survives a reload, in one localStorage key
     audio.js          the oscillator blip synth
+    music.js          the soundtrack: a step sequencer, also without files
     bus.js            engine → UI events, so the engine imports no UI
   engine/             the simulation: spawn, damage, powers, foes, towers, waves
   render/             canvas drawing: shapes, board, entities, fx, scene
@@ -147,6 +152,17 @@ Three rules keep it navigable:
 - **Shared state is a live binding.** `S` from `core/state.js` and `cell`/`W`/`H` from
   `core/view.js` are `export let`, so modules read the current value. Read them, never
   reassign them from outside their own module.
+
+## Sound
+
+Neither the effects nor the soundtrack load a file. `core/audio.js` is one oscillator
+per blip with a decaying gain envelope; `core/music.js` is a sixteenth-note sequencer
+that schedules pad, bass, arpeggio and drum voices a fraction of a second ahead of the
+audio clock, over four bars in A minor. It has two moods and the run's own events switch
+them: `calm` for menus, briefings and the build phase, `combat` while a wave is running.
+Both share one AudioContext, created on the first tap because browsers keep a page
+silent until then, and both have their own toggle in the HUD (`♪` effects, `♫` music).
+A backgrounded tab stops the loop rather than playing to nobody.
 
 ## Adding content
 
@@ -172,6 +188,6 @@ and the playbook footer all render from it.
 ## Saved progress
 
 One localStorage key, `head-of-ai-defence:v1`: unlocked lessons, best wave, lifetime
-totals, the last 40 runs, and the sound preference. It never leaves the browser, and
+totals, the last 40 runs, and the sound and music preferences. It never leaves the browser, and
 **Clear progress** at the bottom of the playbook wipes it. If storage is blocked, the
 game still runs — it just forgets everything when you close the tab.

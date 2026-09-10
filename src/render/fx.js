@@ -49,15 +49,40 @@ export function drawFx(dt){
   }
   S.fx=S.fx.filter(f=>f.l>0);
 }
-export function drawParts(dt){
-  for(const p of S.parts){
-    p.l-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.93;p.vy*=.93;
+/**
+ * Ages and draws one particle list. Sparks by default; a record with `sq` is
+ * a ribbon instead, which falls under `g`, keeps its speed (`d`) and spins.
+ */
+function ageParticles(list,dt){
+  for(const p of list){
+    p.l-=dt;
+    if(p.g)p.vy+=p.g*dt;
+    p.x+=p.vx*dt;p.y+=p.vy*dt;
+    const drag=p.d===undefined?.93:p.d;
+    p.vx*=drag;p.vy*=drag;
     const a=Math.max(0,p.l/p.m);
     ctx.globalAlpha=a;ctx.fillStyle=p.c;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,6.3);ctx.fill();
+    if(p.sq){
+      p.a+=p.spin*dt;
+      ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);
+      ctx.fillRect(-p.sq/2,-p.sq*.7,p.sq,p.sq*1.4);ctx.restore();
+    }else{
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r*a,0,6.3);ctx.fill();
+    }
   }
-  ctx.globalAlpha=1;S.parts=S.parts.filter(p=>p.l>0);
+  ctx.globalAlpha=1;
+  return list.filter(p=>p.l>0);
 }
+
+export function drawParts(dt){
+  S.parts=ageParticles(S.parts,dt);
+}
+
+/** Celebration ribbons, drawn last so they fall in front of the clear card. */
+export function drawConfetti(dt){
+  if(S.conf.length)S.conf=ageParticles(S.conf,dt);
+}
+
 export function drawFloats(dt){
   ctx.textAlign='center';ctx.textBaseline='middle';
   for(const f of S.floats){
@@ -106,3 +131,51 @@ export function drawBanner(dt){
   ctx.restore();
 }
 
+/** Sets the font, shrunk just enough that `text` fits inside `max` pixels. */
+function fitFont(text,max,size,weight){
+  const font=px=>weight+' '+px+'px Sora, sans-serif';
+  ctx.font=font(size);
+  const w=ctx.measureText(text).width;
+  if(w>max)ctx.font=font(size*max/w);
+}
+
+/**
+ * The wave-clear card. Bigger and louder than the wave banner on purpose:
+ * clearing a wave is the thing the whole game is asking you to do.
+ */
+export function drawCheer(dt){
+  const c=S.cheer;if(!c)return;
+  c.l-=dt;if(c.l<=0){S.cheer=null;return}
+
+  const age=c.m-c.l;
+  // Small, overshoot, settle — the card should land like a stamp.
+  const k=Math.min(1,age/.4);
+  const pop=1+.22*Math.sin(k*Math.PI)-.3*(1-k)*(1-k);
+  const a=Math.min(1,age*5)*Math.min(1,c.l*2.2);
+  const w=Math.min(W*.86,cell*7.6),h=cell*(c.lines.length?2.9:2.1),x=W/2,y=H*.4;
+
+  ctx.save();
+  ctx.globalAlpha=a*.55;ctx.fillStyle='rgba(2,6,12,.9)';ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=a;
+  ctx.translate(x,y);ctx.scale(pop,pop);ctx.textAlign='center';ctx.textBaseline='middle';
+
+  const g=ctx.createLinearGradient(-w/2,0,w/2,0);
+  g.addColorStop(0,'rgba(53,230,213,.22)');g.addColorStop(1,'rgba(110,231,160,.22)');
+  ctx.fillStyle=g;rr(ctx,-w/2,-h/2,w,h,14);ctx.fill();
+  ctx.strokeStyle='rgba(110,231,160,.75)';ctx.lineWidth=1.4;ctx.stroke();
+
+  const room=w-cell*.9;
+  fitFont(c.sub,room,cell*.3,'600');
+  ctx.fillStyle='#6ee7a0';ctx.fillText(c.sub,0,-h/2+cell*.5);
+
+  ctx.shadowColor='rgba(110,231,160,.65)';ctx.shadowBlur=18;
+  fitFont(c.txt,room,cell*.62,'700');
+  ctx.fillStyle='#eafff4';ctx.fillText(c.txt,0,-h/2+cell*1.16);
+  ctx.shadowBlur=0;
+
+  c.lines.forEach((L,i)=>{
+    fitFont(L.t,room,cell*.28,'600');
+    ctx.fillStyle=L.c;ctx.fillText(L.t,0,-h/2+cell*1.68+i*cell*.4);
+  });
+  ctx.restore();
+}

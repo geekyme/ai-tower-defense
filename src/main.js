@@ -12,6 +12,7 @@ import { refs } from './ui/dom.js';
 import { hud } from './ui/hud.js';
 import { initInput, ghost } from './ui/input.js';
 import { initScreens, menu } from './ui/screens.js';
+import { initMusic } from './core/music.js';
 
 /** Longest frame delta the simulation will accept, so a backgrounded tab
  *  resumes rather than fast-forwarding. */
@@ -53,6 +54,7 @@ function onLayoutChange(prevTotal) {
 
 initView(refs.canvas, refs.stage, onLayoutChange);
 initScreens();
+initMusic();
 initInput();
 menu();
 

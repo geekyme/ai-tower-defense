@@ -129,6 +129,7 @@ export function rescaleEntities(prevTotal, threats) {
   }
   S.shots.length = 0;
   S.parts.length = 0;
+  S.conf.length = 0;
   S.fx.length = 0;
   S.floats.length = 0;
   S.sludge.length = 0;
