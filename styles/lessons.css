@@ -123,6 +123,11 @@ header.top h1 em {
   padding: 12px 0;
 }
 
+footer.foot .credit {
+  text-align: left;
+  margin: 3px 0 0;
+}
+
 footer.foot {
   margin-top: 34px;
   padding-top: 14px;

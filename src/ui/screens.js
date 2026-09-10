@@ -14,6 +14,7 @@ import { hud, invalidateHud } from './hud.js';
 import { hidePreview, hideInspect } from './panels.js';
 import { lessonListHTML, progressHTML } from './lesson-list.js';
 import { shareCard } from './share-card.js';
+import { creditHTML } from './credit.js';
 
 /** Full-board overlay used by every screen. */
 function openOverlay(html) {
@@ -124,7 +125,8 @@ export function menu() {
     '<p class="lore">Bosses freeze, downgrade, hijack and permanently delete your defences. Anything you build in one tidy cluster will be gone by era four.</p>' +
     '<p class="lore">Every wave you clear unlocks one lesson in <b>the playbook</b>. Clear all twenty five and the whole thing is yours.</p>' +
     '<button id="go" type="button">Take the role</button>' +
-    '<a class="btn ghost" href="lessons.html">Open the playbook</a>');
+    '<a class="btn ghost" href="lessons.html">Open the playbook</a>' +
+    creditHTML());
 
   el('go').onclick = () => {
     closeOverlay();
@@ -234,7 +236,8 @@ export function victory() {
     '<button id="endless" type="button">Continue forever</button>' +
     playbookLink() +
     '<button class="ghost" id="snap" type="button">Save result card</button>' +
-    '<button class="ghost" id="menu2" type="button">New game</button>');
+    '<button class="ghost" id="menu2" type="button">New game</button>' +
+    creditHTML());
 
   el('endless').onclick = () => {
     closeOverlay();

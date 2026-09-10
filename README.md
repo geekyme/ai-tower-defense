@@ -123,6 +123,13 @@ files drift apart.
 glyph to `src/ui/glyphs.js`, and a chassis branch to `drawTower` in
 `src/render/entities.js`. Novel firing behaviour goes in `stepTowers`.
 
+## Credits
+
+Made by a fellow head of AI — [linkedin.com/in/geekyme](https://www.linkedin.com/in/geekyme/).
+
+The byline lives in [`src/ui/credit.js`](src/ui/credit.js); the menu, the victory screen
+and the playbook footer all render from it.
+
 ## Saved progress
 
 One localStorage key, `head-of-ai-defence:v1`: unlocked lessons, best wave, lifetime

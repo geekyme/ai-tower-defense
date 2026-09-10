@@ -2,6 +2,7 @@ import { CAMPAIGN_WAVES } from './data/waves.js';
 import { progress, unlockedCount, resetProgress } from './core/storage.js';
 import { lessonListHTML, progressHTML } from './ui/lesson-list.js';
 import { el, esc } from './ui/dom.js';
+import { creditHTML } from './ui/credit.js';
 
 /** Renders lessons.html from whatever this browser has stored. */
 
@@ -62,6 +63,7 @@ function render() {
 
   el('lessons').innerHTML = lessonListHTML({ size: 36 });
   el('history').innerHTML = '<h2>Recent runs</h2>' + historyHTML();
+  el('credit').innerHTML = creditHTML();
 }
 
 el('reset').addEventListener('click', () => {
