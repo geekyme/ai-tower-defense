@@ -52,6 +52,8 @@ export function createRun() {
     killed: 0,
     leaked: 0,
     lost: 0,
+    /** Waves restarted after a defeat. */
+    retries: 0,
 
     // selection
     sel: null,

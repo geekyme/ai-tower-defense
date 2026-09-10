@@ -56,6 +56,8 @@ const { progress } = await import('../src/core/storage.js');
 const { stepFoes } = await import('../src/engine/foes.js');
 const { stepTowers, stepShots, placeTower, canBuild } = await import('../src/engine/towers.js');
 const { stepWave, nextBrief, beginBuildPhase, startWave } = await import('../src/engine/waves.js');
+const { takeCheckpoint, retryWave, clearCheckpoint } = await import('../src/engine/checkpoint.js');
+const { START_FOCUS } = await import('../src/core/config.js');
 const { render } = await import('../src/render/scene.js');
 const { paintBackground } = await import('../src/render/board.js');
 const { threatThumbnail } = await import('../src/render/shapes.js');
@@ -70,6 +72,39 @@ initView(canvas, stage, paintBackground);
 // Every threat's artwork must at least draw without throwing.
 for (const key of Object.keys(THREATS)) threatThumbnail(key, 32);
 
+/*
+ * A defeat costs the wave, not the run. Retrying has to hand back exactly the
+ * board and the focus the wave started with, before any listeners are wired
+ * up so the briefing it asks for goes nowhere.
+ */
+const early = [];
+{
+  S.wave = 4;
+  S.focus = 500;
+  takeCheckpoint();
+
+  const spot = plots()[0];
+  placeTower(TOWER_KEYS[0], spot.c, spot.r);
+  S.sanity = 0;
+  S.killed = 12;
+
+  if (!retryWave()) early.push('a retry after a defeat did not restore anything');
+  if (S.wave !== 4) early.push('a retry left the run on wave ' + S.wave + ', not 4');
+  if (S.focus !== 500) early.push('a retry left ' + S.focus + ' focus, not the 500 the wave started with');
+  if (S.towers.length !== 0) early.push('a retry kept ' + S.towers.length + ' defence(s) built during the failed attempt');
+  if (S.sanity !== S.max) early.push('a retry left sanity at ' + S.sanity + ', not ' + S.max);
+  if (S.killed !== 0) early.push('a retry kept the failed attempt\'s kill count');
+  if (S.retries !== 1) early.push('a retry was not counted');
+
+  // Back to a fresh run by hand: `S` was destructured out of the module above,
+  // so it is a copy of the binding and `newRun()` would leave it behind.
+  clearCheckpoint();
+  S.wave = 0;
+  S.phase = 'menu';
+  S.focus = START_FOCUS;
+  S.retries = 0;
+}
+
 const targetWaves = Number(process.argv[2] || 8);
 const DT = 1 / 60;
 const MAX_FRAMES = 60 * 60 * 40; // 40 simulated minutes, a hard stop on hangs
@@ -80,7 +115,12 @@ let finished = false;
 
 on('wave:cleared', ({ lesson }) => { if (lesson) unlocks.push(lesson.wave); });
 on('run:lost', () => { failures.push('sanity hit zero on wave ' + S.wave); finished = true; });
-on('run:won', () => { finished = true; });
+on('run:won', () => {
+  // Past the campaign the game is supposed to keep going. Asking for more
+  // waves than there are is what tests that it does.
+  if (targetWaves > CAMPAIGN_WAVES) nextBrief();
+  else finished = true;
+});
 on('run:brief', () => {
   beginBuildPhase();
   // This is a code-path test, not a balance test: the harness plays with a
@@ -132,11 +172,14 @@ while (!finished && S.wave <= targetWaves && frames < MAX_FRAMES) {
 /* --------------------------------------------------------------- report */
 
 const reached = S.best;
-const expected = Array.from({ length: reached }, (_, i) => i + 1);
-const problems = [];
+const expected = Array.from({ length: Math.min(reached, CAMPAIGN_WAVES) }, (_, i) => i + 1);
+const problems = [...early];
 
 if (frames >= MAX_FRAMES) problems.push('simulation did not settle within ' + MAX_FRAMES + ' frames');
 if (reached === 0) problems.push('no wave was cleared');
+if (targetWaves > CAMPAIGN_WAVES && reached <= CAMPAIGN_WAVES && !failures.length) {
+  problems.push('the run stopped at wave ' + reached + ' instead of carrying on past the campaign');
+}
 if (String(unlocks) !== String(expected)) {
   problems.push('lessons unlocked ' + JSON.stringify(unlocks) + ', expected ' + JSON.stringify(expected));
 }
@@ -144,7 +187,8 @@ if (String(progress.unlockedLessons) !== String(expected)) {
   problems.push('stored unlocks ' + JSON.stringify(progress.unlockedLessons) + ' do not match');
 }
 
-console.log('waves cleared      ', reached + ' of ' + Math.min(targetWaves, CAMPAIGN_WAVES));
+console.log('waves cleared      ', reached + ' of ' + targetWaves +
+  (reached > CAMPAIGN_WAVES ? '  (endless ' + (reached - CAMPAIGN_WAVES) + ')' : ''));
 console.log('lessons unlocked   ', unlocks.length);
 console.log('threats handled    ', S.killed, '| leaked', S.leaked, '| defences lost', S.lost);
 console.log('sanity left        ', S.sanity + '/' + S.max);

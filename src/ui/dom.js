@@ -3,6 +3,7 @@
 export const el = id => document.getElementById(id);
 
 export const refs = {
+  get app() { return el('app'); },
   get stage() { return el('stage'); },
   get canvas() { return el('cv'); },
   get shop() { return el('shop'); },

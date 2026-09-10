@@ -62,7 +62,8 @@ export function waveGroups(n) {
     let k = ENDLESS_POOL[Math.floor(Math.random() * ENDLESS_POOL.length)], guard = 0;
     while (seen.includes(k) && guard++ < 12) k = ENDLESS_POOL[Math.floor(Math.random() * ENDLESS_POOL.length)];
     seen.push(k);
-    groups.push([k, 4 + Math.floor(en * 0.7), 1.4, i * 1.5]);
+    // Capped: a wave that never stops arriving is a chore, not a challenge.
+    groups.push([k, Math.min(20, 4 + Math.floor(en * 0.7)), 1.4, i * 1.5]);
   }
   if (en % 3 === 0) groups.push([ENDLESS_BOSSES[Math.floor(en / 3) % ENDLESS_BOSSES.length], 1, 1, 3]);
   return groups;

@@ -2,14 +2,13 @@ import { TOWERS } from '../data/towers.js';
 import { S } from '../core/state.js';
 import { cell, cellOf, canvas } from '../core/view.js';
 import { unlockAudio, toggleSound, soundEnabled } from '../core/audio.js';
-import { startMusic, toggleMusic, musicEnabled } from '../core/music.js';
-import { on } from '../core/bus.js';
+import { on, emit } from '../core/bus.js';
 import { canBuild, placeTower, towerAt, upgradeTower, sellTower } from '../engine/towers.js';
 import { startWave } from '../engine/waves.js';
 import { say } from '../engine/effects.js';
 import { el, refs } from './dom.js';
 import { hud, invalidateHud } from './hud.js';
-import { showInspect, hideInspect, hidePreview, collapsePreview, togglePreviewDetails } from './panels.js';
+import { showInspect, hideInspect, hidePreview, isPreviewOpen } from './panels.js';
 import { clearSelection } from './shop.js';
 import { briefing, pauseScreen } from './screens.js';
 
@@ -25,9 +24,12 @@ function onBoardTap(ev) {
   ev.preventDefault();
   if (S.phase !== 'wave' && S.phase !== 'build') return;
 
-  // Reading about a defence folds away the moment you go back to the board,
-  // but the strip stays: it is what tells you what you are about to place.
-  collapsePreview();
+  // The details sheet covers the lower board, so the tap that dismisses it is
+  // never also the tap that builds something you cannot see.
+  if (isPreviewOpen()) {
+    hidePreview();
+    return;
+  }
 
   const { c, r } = cellOf(ev);
   const existing = towerAt(c, r);
@@ -60,7 +62,7 @@ function onBoardTap(ev) {
  */
 function wakeAudio() {
   unlockAudio();
-  startMusic();
+  emit('audio:wake', {});
 }
 
 export function initInput() {
@@ -78,12 +80,10 @@ export function initInput() {
   });
   el('closeBtn').addEventListener('click', hideInspect);
   el('pvX').addEventListener('click', clearSelection);
-  el('pvInfo').addEventListener('click', togglePreviewDetails);
 
-  // The open sheet does cover the lower board, so tapping it folds it away
-  // rather than trapping you behind what you were reading.
+  // Tapping the sheet itself closes it too, so it is never in the way.
   refs.preview.addEventListener('click', ev => {
-    if (!ev.target.closest('button')) collapsePreview();
+    if (!ev.target.closest('button')) hidePreview();
   });
   refs.callBtn.addEventListener('click', startWave);
 
@@ -93,15 +93,13 @@ export function initInput() {
     briefing();
   });
 
+  // One switch for the lot: blips and soundtrack together.
   el('sndBtn').addEventListener('click', e => {
-    e.currentTarget.classList.toggle('on', toggleSound());
+    const sound = toggleSound();
+    emit('audio:enabled', sound);
+    e.currentTarget.classList.toggle('on', sound);
   });
   el('sndBtn').classList.toggle('on', soundEnabled());
-
-  el('musBtn').addEventListener('click', e => {
-    e.currentTarget.classList.toggle('on', toggleMusic());
-  });
-  el('musBtn').classList.toggle('on', musicEnabled());
 
   el('pauseBtn').addEventListener('click', () => {
     if (S.phase !== 'wave' && S.phase !== 'build') return;

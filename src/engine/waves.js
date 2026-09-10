@@ -7,6 +7,7 @@ import { emit } from '../core/bus.js';
 import { recordBestWave, unlockLesson } from '../core/storage.js';
 import { sfx } from '../core/audio.js';
 import { spawn } from './spawn.js';
+import { takeCheckpoint } from './checkpoint.js';
 import { say, flash, banner, cheer, confetti, shock } from './effects.js';
 
 /** Seconds the wave-clear celebration holds the board before the briefing. */
@@ -98,4 +99,6 @@ export function nextBrief() {
 export function beginBuildPhase() {
   S.phase = 'build';
   S.buildT = BUILD_TIME;
+  // Before a single focus is spent on this wave: what a retry rewinds to.
+  takeCheckpoint();
 }

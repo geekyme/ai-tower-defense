@@ -26,9 +26,17 @@ export const LEVEL_DAMAGE = 1.55;
 export const LEVEL_RANGE = 1.1;
 export const LEVEL_RATE = 0.9;
 
-/** Threat health scaling: +8.5% per wave, +75% per endless lap. */
+/**
+ * Threat health scaling: +8.5% for every wave, and a further +20% for every
+ * wave past the campaign.
+ *
+ * `S.endless` counts waves, not laps, so the endless figure is per wave too:
+ * at +75% it stacked to four times the campaign's finale within ten waves and
+ * ended the run whatever you built, which is a wall rather than an endless
+ * mode.
+ */
 export const WAVE_HP_SCALE = 0.085;
-export const ENDLESS_HP_SCALE = 0.75;
+export const ENDLESS_HP_SCALE = 0.2;
 
 /** Cell keys covered by the lane, so nothing can be built on it. */
 export const pathKeys = (() => {

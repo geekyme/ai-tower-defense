@@ -1,8 +1,10 @@
 import { TOWERS, TOWER_KEYS } from '../data/towers.js';
 import { S } from '../core/state.js';
+import { W, H, cell } from '../core/view.js';
+import { say } from '../engine/effects.js';
 import { refs } from './dom.js';
 import { glyph } from './glyphs.js';
-import { showPreview, hidePreview, hideInspect } from './panels.js';
+import { showPreview, hidePreview, hideInspect, isPreviewOpen } from './panels.js';
 import { hud, invalidateHud } from './hud.js';
 
 /** The scrolling row of buildable defences. */
@@ -26,16 +28,39 @@ export function buildShop() {
   }
 }
 
-/** Toggles a defence as the thing the next board tap will place. */
+/**
+ * Picks the defence the next board tap will place.
+ *
+ * Selecting one puts nothing over the board — the card lights up and so do the
+ * plots you can build on, which is all you need while you are choosing where
+ * it goes. Tapping the card you already have selected is what opens its
+ * details, and while those are open, tapping any card shows that one's.
+ */
 export function selectTower(key) {
-  S.build = S.build === key ? null : key;
+  // The shop is dimmed behind a screen, but a stray tap must not get through
+  // it either: a defence chosen from behind a briefing is a defence you did
+  // not mean to choose.
+  if (S.phase !== 'build' && S.phase !== 'wave') return;
+
+  const open = isPreviewOpen();
+  const same = S.build === key;
+
+  S.build = key;
   hideInspect();
-  if (S.build) showPreview(key);
-  else hidePreview();
+
+  if (open && same) hidePreview();
+  else if (open || same) showPreview(key);
+  else if (!S.towers.length) {
+    // Early in a run the lit plots need a word of explanation. It floats over
+    // the board and fades, so it is never something to dismiss.
+    say(W / 2, H * 0.5, 'tap a lit plot to place it', TOWERS[key].col, cell * 0.32);
+  }
+
   invalidateHud();
   hud();
 }
 
+/** Drops the selection and the details with it. */
 export function clearSelection() {
   S.build = null;
   hidePreview();

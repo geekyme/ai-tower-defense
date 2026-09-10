@@ -7,25 +7,42 @@ import { sfx } from '../core/audio.js';
 import { progress, recordSession, unlockedCount } from '../core/storage.js';
 import { scale } from '../engine/spawn.js';
 import { startWave, nextBrief, beginBuildPhase } from '../engine/waves.js';
+import { hasCheckpoint, retryWave, clearCheckpoint } from '../engine/checkpoint.js';
 import { threatThumbnail } from '../render/shapes.js';
 import { el, refs, esc } from './dom.js';
 import { buildShop } from './shop.js';
 import { hud, invalidateHud } from './hud.js';
 import { hidePreview, hideInspect } from './panels.js';
 import { lessonListHTML, progressHTML } from './lesson-list.js';
-import { shareCard } from './share-card.js';
+import { shareRun, saveCard } from './share-card.js';
+import { toast } from './toast.js';
 import { creditHTML } from './credit.js';
+
+/**
+ * Recedes the shop while something else owns the screen — a menu, a briefing,
+ * a result, or the moment a wave is cleared. The shop sits outside the board
+ * in the layout, so without this it stays lit and tappable underneath every
+ * screen, and a defence picked from behind one leaves its sheet on the board.
+ */
+function holdScreen(held) {
+  refs.app.classList.toggle('screen', held);
+  if (held) {
+    hidePreview();
+    hideInspect();
+  }
+}
 
 /** Full-board overlay used by every screen. */
 function openOverlay(html) {
   refs.overlayBox.innerHTML = html;
-  hidePreview();
+  holdScreen(true);
   refs.overlay.classList.add('show');
   refs.overlayScroll.scrollTop = 0;
 }
 
 function closeOverlay() {
   refs.overlay.classList.remove('show');
+  holdScreen(false);
 }
 
 /* --------------------------------------------------------------- briefing */
@@ -103,6 +120,7 @@ export function briefing() {
 
 export function menu() {
   newRun();
+  clearCheckpoint();
   layout();
   buildShop();
   invalidateHud();
@@ -121,6 +139,7 @@ export function menu() {
     '<p class="kick">Twenty five waves across five eras, then it never stops. The problems change as you get better at the job.</p>' +
     resume +
     '<p class="lore">Threats walk from <b>inbound</b> to <b>you</b>. Kills pay <b>focus</b>. Anything that lands costs <b>sanity</b>, and you only have sixteen.</p>' +
+    '<p class="lore">Tap a defence to pick it, then tap a lit plot to place it. Tap the same defence again to read what it is for.</p>' +
     '<p class="lore">Every defence has one thing it is the only answer to. Read the briefing before each wave, because armour, invisibility and immunity are all counters to a specific choice you made earlier.</p>' +
     '<p class="lore">Bosses freeze, downgrade, hijack and permanently delete your defences. Anything you build in one tidy cluster will be gone by era four.</p>' +
     '<p class="lore">Every wave you clear unlocks one lesson in <b>the playbook</b>. Clear all twenty five and the whole thing is yours.</p>' +
@@ -161,7 +180,9 @@ function statBlock() {
   return '<div id="ovStats">' +
     '<div><b style="color:#35e6d5">' + S.killed + '</b><span>handled</span></div>' +
     '<div><b style="color:#ff6b6b">' + S.leaked + '</b><span>got through</span></div>' +
-    '<div><b style="color:#a379ff">' + S.lost + '</b><span>defences lost</span></div></div>';
+    '<div><b style="color:#a379ff">' + S.lost + '</b><span>defences lost</span></div>' +
+    (S.retries ? '<div><b style="color:#ffc24b">' + S.retries + '</b><span>waves retried</span></div>' : '') +
+    '</div>';
 }
 
 /**
@@ -179,6 +200,7 @@ function endSession(outcome) {
     handled: S.killed,
     leaked: S.leaked,
     defencesLost: S.lost,
+    retries: S.retries,
     sanity: S.sanity,
     maxSanity: S.max,
     towers: [...new Set(S.towers.map(t => t.key))],
@@ -188,6 +210,17 @@ function endSession(outcome) {
 
 function playbookLink() {
   return '<a class="btn ghost" href="lessons.html">Open the playbook</a>';
+}
+
+/** Send the run to someone, or keep the card. Both end screens offer both. */
+function shareButtons() {
+  return '<button class="ghost" id="send" type="button">Share this run</button>' +
+    '<button class="ghost" id="snap" type="button">Save the card</button>';
+}
+
+function wireShareButtons() {
+  el('send').onclick = shareRun;
+  el('snap').onclick = saveCard;
 }
 
 export function defeat() {
@@ -206,18 +239,38 @@ export function defeat() {
       ? 'You already have the full playbook.'
       : 'You have ' + got + ' of ' + CAMPAIGN_WAVES + ' lessons. Every wave you clear keeps one more, permanently.';
 
+  // A defeat costs you the wave, not the run: the retry rewinds to the moment
+  // this wave's briefing ended, with the focus and the board you had then.
+  const canRetry = hasCheckpoint();
+  const retry = canRetry
+    ? '<p class="lore">Go again from the top of this wave: the defences and the focus you' +
+      ' started it with, and your sanity back to ' + S.max + '. Build it differently.</p>' +
+      '<button id="retry" type="button">Try wave ' + S.wave + ' again</button>'
+    : '';
+
   openOverlay(
     '<div class="eyebrow"><b>' + esc(waveEra(Math.min(S.wave, CAMPAIGN_WAVES)).n) + '</b><i></i></div>' +
     '<h1 class="md">Burnt out<em>wave ' + S.wave + (S.endless ? '' : ' of ' + CAMPAIGN_WAVES) + '</em></h1>' +
     '<p class="kick">' + esc(waveTitle(S.wave)) + '</p>' + statBlock() + progressHTML() +
     '<p class="lore">' + push +
       (left > 0 ? ' Everything that just killed you has a counter written down in there.' : '') + '</p>' +
-    '<button id="again" type="button">Run it back' + (left > 0 ? ' · ' + left + ' lessons to go' : '') + '</button>' +
+    retry +
+    '<button' + (canRetry ? ' class="ghost"' : '') + ' id="again" type="button">Start a new run' +
+      (left > 0 && !canRetry ? ' · ' + left + ' lessons to go' : '') + '</button>' +
     playbookLink() +
-    '<button class="ghost" id="snap" type="button">Save result card</button>');
+    shareButtons());
 
+  if (canRetry) {
+    el('retry').onclick = () => {
+      closeOverlay();
+      refs.callRow.classList.add('hidden');
+      if (!retryWave()) menu();
+      invalidateHud();
+      hud();
+    };
+  }
   el('again').onclick = () => { closeOverlay(); menu(); };
-  el('snap').onclick = shareCard;
+  wireShareButtons();
 }
 
 export function victory() {
@@ -235,7 +288,7 @@ export function victory() {
     '<div class="rows lessons-inline">' + lessonListHTML({ size: 30 }) + '</div>' +
     '<button id="endless" type="button">Continue forever</button>' +
     playbookLink() +
-    '<button class="ghost" id="snap" type="button">Save result card</button>' +
+    shareButtons() +
     '<button class="ghost" id="menu2" type="button">New game</button>' +
     creditHTML());
 
@@ -243,23 +296,8 @@ export function victory() {
     closeOverlay();
     nextBrief();
   };
-  el('snap').onclick = shareCard;
+  wireShareButtons();
   el('menu2').onclick = () => { closeOverlay(); menu(); };
-}
-
-/* ------------------------------------------------------- lesson unlock toast */
-
-function toast(text, sub) {
-  const node = document.createElement('div');
-  node.className = 'toast';
-  node.innerHTML = '<b>' + esc(text) + '</b><span>' + esc(sub) + '</span>' +
-    '<a href="lessons.html">read</a>';
-  document.body.appendChild(node);
-  requestAnimationFrame(() => node.classList.add('in'));
-  setTimeout(() => {
-    node.classList.remove('in');
-    setTimeout(() => node.remove(), 400);
-  }, 4200);
 }
 
 /** Wires the engine's events to the screens. Call once at start-up. */
@@ -268,11 +306,14 @@ export function initScreens() {
   on('run:lost', defeat);
   on('run:won', victory);
   on('wave:cleared', ({ lesson }) => {
+    // The celebration owns the board for a couple of seconds; nothing should
+    // be sitting on top of it or lit up beneath it.
+    holdScreen(true);
     if (!lesson) return;
     // A beat behind the celebration, so the two land as two moments.
     setTimeout(() => {
       sfx.unlock();
-      toast('Lesson ' + lesson.wave + ' unlocked', lesson.title);
+      toast('Lesson ' + lesson.wave + ' unlocked', lesson.title, { href: 'lessons.html', label: 'read' });
     }, 900);
   });
   on('wave:started', () => {

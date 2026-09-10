@@ -13,6 +13,15 @@ control you skipped.
 **Clearing a wave permanently unlocks that wave's lesson** in [the playbook](lessons.html).
 Twenty five waves, twenty five lessons, and the full list once you finish the campaign.
 
+Burning out costs you the wave rather than the run: every briefing leaves a checkpoint
+behind, so a defeat offers the same wave again with the board and the focus you started
+it with, and your sanity back.
+
+Past wave 25 it keeps going for as long as you can hold it. Endless waves are improvised
+from the campaign's threat pool with a boss every third one, and threat health keeps
+climbing — gently enough that how far you get is a question about your board rather than
+a wall a few waves after the campaign ends.
+
 No build step, no dependencies, no server — static files and ES modules.
 
 ## Running it locally
@@ -78,15 +87,47 @@ only which grid area they land in — so the three layouts are pure CSS:
 | ≥ 900px wide, or landscape under 620px tall | HUD and shop in a side rail, board takes the full height | 567x882 at 1440x900 |
 
 Everything that floats over the board lives in one bottom dock, stacked in a column, so
-the build sheets and the call-wave row can never cover each other. Where there is room
-the dock leaves the board alone entirely: on a phone it spends the letterboxing under
-the board, on a rail layout it moves into the empty column below the shop, and in short
-landscape the board shifts left and the dock sits beside it — a sheet across a 243px
-board hides the whole game.
+the sheets and the call-wave row can never cover each other. Where there is room the dock
+leaves the board alone entirely: on a phone it spends the letterboxing under the board, on
+a rail layout it moves into the empty column below the shop, and in short landscape the
+board shifts left and the dock sits beside it — a sheet across a 243px board hides the
+whole game.
+
+Choosing a defence puts nothing over the board at all. The card lights up, every plot you
+could build on lights up with it, and that is the whole interface: the lower rows stay
+reachable. What a defence is *for* is a sheet you ask for — tap the card you already have
+selected — and any tap outside closes it again.
+
+The shop is the one part of the layout that sits outside the board, so an overlay cannot
+cover it. While a screen is up, or a wave is being celebrated, `#app.screen` recedes it
+and takes it out of play: otherwise it stays lit under every menu and briefing, and a
+defence picked from behind one leaves its sheet on the board afterwards.
 
 `layout()` in `core/view.js` publishes the measured board size as `--board-w` and
 `--board-h` on the stage, which is what keeps the floating sheets and the call-wave row
 pinned to the board rather than stretching across a much wider stage on desktop.
+
+## Deploying a change safely
+
+The site ships as raw ES modules, which browsers *link* rather than merely fetch. If a
+visitor still holds one file from the previous deploy while another arrives fresh, an
+import that no longer matches takes down the whole graph — not one broken feature, a
+black page. Safari is especially willing to keep serving a module it already has,
+reload or no reload. Three things guard against that, and against ordinary bugs at
+start-up:
+
+- **Versioned module URLs.** `scripts/stamp-modules.mjs` rewrites every relative import
+  and both `<script type="module">` tags to carry `?v=<commit sha>`. The Pages workflow
+  runs it on the copy it publishes, so a deploy's modules can only be fetched as a set.
+  The repo itself is never stamped: local development stays a plain static server.
+- **A boot check.** `main.js` stamps `data-booted` on the document. If that is missing by
+  `DOMContentLoaded` — module scripts are deferred, so by then it has either run or
+  failed — the page reloads once, and a second failure shows the error rather than
+  looping.
+- **Start-up steps that fail alone.** Each step in `main.js` runs inside `boot()`, so
+  one that throws is reported in the panel and the next still runs; the soundtrack is
+  loaded with a dynamic `import()` and talks over the bus, so it is not in the game's
+  module graph at all and cannot stop the board from appearing.
 
 ## Testing
 
@@ -96,8 +137,10 @@ node scripts/smoke.mjs 25
 
 Runs the whole 25-wave campaign headlessly: it stubs the DOM, plays the simulation at a
 fixed timestep with a scripted build order, draws every frame through a stub 2D context,
-renders all 37 threat artworks, and asserts that waves advance and lessons unlock one per
-wave in order. It catches the things that break when the data files are edited. Takes
+renders all 37 threat artworks, and asserts that waves advance, that lessons unlock one
+per wave in order, and that retrying a wave hands back exactly the board and the focus it
+started with. Ask it for more waves than the campaign has — `node scripts/smoke.mjs 34` —
+and it plays on into the endless ones, which is how the generated waves stay tested. It catches the things that break when the data files are edited. Takes
 about five seconds and runs in CI before every deploy.
 
 ## Project structure
@@ -133,11 +176,13 @@ src/
     music.js          the soundtrack: a step sequencer, also without files
     bus.js            engine → UI events, so the engine imports no UI
   engine/             the simulation: spawn, damage, powers, foes, towers, waves
+    checkpoint.js     the start of the current wave, for retrying after a defeat
   render/             canvas drawing: shapes, board, entities, fx, scene
-  ui/                 DOM: hud, shop, panels, screens, input, share card
+  ui/                 DOM: hud, shop, panels, screens, input, toast, share card
   main.js             wiring and the game loop
 scripts/
   smoke.mjs           headless campaign test
+  stamp-modules.mjs   versions module URLs at deploy time (CI only)
   og-card.html        source art for the two social cards
   render-og.mjs       renders the cards and the PNG icons (optional, dev only)
 ```
@@ -153,16 +198,41 @@ Three rules keep it navigable:
   `core/view.js` are `export let`, so modules read the current value. Read them, never
   reassign them from outside their own module.
 
+## Sharing a run
+
+Both end screens offer **Share this run** and **Save the card**. The card is a 1080x1350
+PNG drawn on a canvas at the moment you ask for it, and it carries the wave you reached,
+the tally, the defences left standing, the lessons unlocked and the site's own address.
+
+Sharing hands that PNG to the native share sheet along with a message that is already
+written — how far the run got, what it cost, and a link back to the game. Where files
+cannot be shared it sends the message and the link alone; where there is no share sheet
+at all it saves the card and puts the message on the clipboard, and says so.
+
+The link comes from the page's own `<link rel="canonical">`, so it is right wherever the
+site is served from and there is no second copy of the URL to keep in step. One detail
+worth keeping: the card is built with the synchronous `toDataURL` rather than `toBlob`,
+because Safari drops the user gesture across an `await` and then refuses to open the
+share sheet.
+
 ## Sound
 
-Neither the effects nor the soundtrack load a file. `core/audio.js` is one oscillator
-per blip with a decaying gain envelope; `core/music.js` is a sixteenth-note sequencer
-that schedules pad, bass, arpeggio and drum voices a fraction of a second ahead of the
-audio clock, over four bars in A minor. It has two moods and the run's own events switch
-them: `calm` for menus, briefings and the build phase, `combat` while a wave is running.
-Both share one AudioContext, created on the first tap because browsers keep a page
-silent until then, and both have their own toggle in the HUD (`♪` effects, `♫` music).
-A backgrounded tab stops the loop rather than playing to nobody.
+Neither the effects nor the soundtrack load a file. `core/audio.js` is one oscillator per
+blip with a decaying gain envelope. `core/music.js` is a sixteenth-note sequencer that
+schedules its voices a fraction of a second ahead of the audio clock, over four bars of
+ii–V–I–vi in C voiced as rootless sevenths.
+
+It is lo-fi mostly by subtraction: the whole mix runs through one lowpass at 2.1kHz so
+nothing is bright, the off sixteenths land late so nothing sits on the grid, and vinyl
+crackle runs underneath it all. Two moods, switched by the run's own events — `calm` is
+keys, bass and crackle for menus, briefings and the build phase; `combat` brings in a
+soft kick, a brushed snare and hats while a wave runs. Measured at the destination it
+sits around −37 dBFS between waves and −30 during one, with 85–90% of its energy below
+2kHz.
+
+Both share one AudioContext, created on the first tap because browsers keep a page silent
+until then, and one `♪` in the HUD switches both. A backgrounded tab stops the loop rather
+than playing to nobody.
 
 ## Adding content
 
@@ -188,6 +258,6 @@ and the playbook footer all render from it.
 ## Saved progress
 
 One localStorage key, `head-of-ai-defence:v1`: unlocked lessons, best wave, lifetime
-totals, the last 40 runs, and the sound and music preferences. It never leaves the browser, and
+totals, the last 40 runs, and the sound preference. It never leaves the browser, and
 **Clear progress** at the bottom of the playbook wipes it. If storage is blocked, the
 game still runs — it just forgets everything when you close the tab.

@@ -9,6 +9,11 @@
  *   run:won       {}                         campaign complete
  *   run:lost      {}                         sanity hit zero
  *   tower:removed { tower }                  a defence left the board
+ *   audio:wake    {}                         a gesture happened; audio may start
+ *   audio:enabled  boolean                   the HUD's sound switch was thrown
+ *
+ * The soundtrack listens on the last two rather than being imported, which is
+ * what keeps it out of the game's own module graph. See `main.js`.
  */
 const handlers = new Map();
 
