@@ -88,6 +88,28 @@ board hides the whole game.
 `--board-h` on the stage, which is what keeps the floating sheets and the call-wave row
 pinned to the board rather than stretching across a much wider stage on desktop.
 
+## Deploying a change safely
+
+The site ships as raw ES modules, which browsers *link* rather than merely fetch. If a
+visitor still holds one file from the previous deploy while another arrives fresh, an
+import that no longer matches takes down the whole graph — not one broken feature, a
+black page. Safari is especially willing to keep serving a module it already has,
+reload or no reload. Three things guard against that, and against ordinary bugs at
+start-up:
+
+- **Versioned module URLs.** `scripts/stamp-modules.mjs` rewrites every relative import
+  and both `<script type="module">` tags to carry `?v=<commit sha>`. The Pages workflow
+  runs it on the copy it publishes, so a deploy's modules can only be fetched as a set.
+  The repo itself is never stamped: local development stays a plain static server.
+- **A boot check.** `main.js` stamps `data-booted` on the document. If that is missing by
+  `DOMContentLoaded` — module scripts are deferred, so by then it has either run or
+  failed — the page reloads once, and a second failure shows the error rather than
+  looping.
+- **Start-up steps that fail alone.** Each step in `main.js` runs inside `boot()`, so
+  one that throws is reported in the panel and the next still runs; the soundtrack is
+  loaded with a dynamic `import()` and talks over the bus, so it is not in the game's
+  module graph at all and cannot stop the board from appearing.
+
 ## Testing
 
 ```bash
@@ -138,6 +160,7 @@ src/
   main.js             wiring and the game loop
 scripts/
   smoke.mjs           headless campaign test
+  stamp-modules.mjs   versions module URLs at deploy time (CI only)
   og-card.html        source art for the two social cards
   render-og.mjs       renders the cards and the PNG icons (optional, dev only)
 ```
@@ -161,8 +184,8 @@ that schedules pad, bass, arpeggio and drum voices a fraction of a second ahead 
 audio clock, over four bars in A minor. It has two moods and the run's own events switch
 them: `calm` for menus, briefings and the build phase, `combat` while a wave is running.
 Both share one AudioContext, created on the first tap because browsers keep a page
-silent until then, and both have their own toggle in the HUD (`♪` effects, `♫` music).
-A backgrounded tab stops the loop rather than playing to nobody.
+silent until then, and one `♪` in the HUD switches both. A backgrounded tab stops the
+loop rather than playing to nobody.
 
 ## Adding content
 
@@ -188,6 +211,6 @@ and the playbook footer all render from it.
 ## Saved progress
 
 One localStorage key, `head-of-ai-defence:v1`: unlocked lessons, best wave, lifetime
-totals, the last 40 runs, and the sound and music preferences. It never leaves the browser, and
+totals, the last 40 runs, and the sound preference. It never leaves the browser, and
 **Clear progress** at the bottom of the playbook wipes it. If storage is blocked, the
 game still runs — it just forgets everything when you close the tab.

@@ -35,6 +35,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      # A browser links modules rather than merely fetching them, so a visitor
+      # holding one file from the last deploy and one from this one gets a
+      # black page. Stamping the published copy makes each deploy's modules a
+      # set that can only be fetched together. The repo itself is untouched.
+      - name: Version the module URLs
+        run: node scripts/stamp-modules.mjs ${{ github.sha }}
       # The site is plain ES modules, so the repo is the artifact.
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

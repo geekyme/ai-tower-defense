@@ -80,8 +80,7 @@
     <div class="stat" id="waveStat"><b id="waveVal">0/25</b><span>wave</span></div>
     <div class="grow"></div>
     <a class="iconbtn" href="lessons.html" id="bookBtn" title="Playbook" aria-label="Open the playbook">☰</a>
-    <button class="iconbtn on" id="sndBtn" type="button" title="Sound effects" aria-label="Toggle sound effects">♪</button>
-    <button class="iconbtn on" id="musBtn" type="button" title="Music" aria-label="Toggle music">♫</button>
+    <button class="iconbtn on" id="sndBtn" type="button" title="Sound" aria-label="Toggle sound and music">♪</button>
     <button class="iconbtn" id="pauseBtn" type="button" title="Pause" aria-label="Pause">❚❚</button>
   </div>
   <div id="sanityTrack"><div id="sanityFill"></div></div>
@@ -139,8 +138,71 @@
   </div>
 
   <div id="shop"></div>
+
+  <!-- Start-up problems, shown here rather than as a black screen. -->
+  <div id="oops" hidden></div>
 </div>
 
+<script>
+/*
+ * Start-up problems have to be visible. A module graph that fails to link
+ * never runs a line of main.js, so nothing inside the game can report it and
+ * the page would otherwise sit there black with no clue why. This is
+ * deliberately plain, dependency-free script: it has to work on the days the
+ * rest of the site does not.
+ */
+(function () {
+  var told = false;
+
+  /** Called by main.js for a start-up step that threw, and from here below. */
+  window.gameProblem = function (label, detail) {
+    if (told) return;
+    told = true;
+    var box = document.getElementById('oops');
+    if (!box) return;
+    box.innerHTML = '<b></b><span></span><button type="button">Reload</button>';
+    box.firstChild.textContent = label;
+    box.firstChild.nextSibling.textContent = String(detail || '');
+    box.lastChild.onclick = function () { location.reload(); };
+    box.hidden = false;
+  };
+
+  // Whatever failed first is the interesting one, including a link error in a
+  // module, which reports here and nowhere else.
+  var first = null;
+  window.addEventListener('error', function (e) {
+    if (first) return;
+    if (e.message) {
+      first = e.message + (e.filename ? '  (' + e.filename.split('/').pop() + ':' + e.lineno + ')' : '');
+    } else if (e.target && e.target.src) {
+      first = 'could not load ' + String(e.target.src).split('/').pop();
+    }
+  }, true);
+
+  /*
+   * Module scripts are deferred, so by DOMContentLoaded main.js has either
+   * booted or failed, and a missing flag means failed. One reload first: it
+   * revalidates every module, which fixes the half-updated cache a deploy can
+   * leave behind. A second failure is a real fault, so say what it was.
+   */
+  window.addEventListener('DOMContentLoaded', function () {
+    if (document.documentElement.hasAttribute('data-booted')) return;
+    var key = 'head-of-ai-defence:reboot';
+    var tried;
+    try {
+      tried = sessionStorage.getItem(key);
+      sessionStorage.setItem(key, '1');
+    } catch (e) {
+      tried = '1';
+    }
+    if (!tried) {
+      location.reload();
+      return;
+    }
+    window.gameProblem('The game could not start', first || 'the code did not load');
+  });
+})();
+</script>
 <script type="module" src="src/main.js"></script>
 </body>
 </html>

@@ -57,7 +57,7 @@ canvas#cv{display:block;border-radius:16px;touch-action:none}
  */
 #dock{position:absolute;left:0;right:0;bottom:0;z-index:6;pointer-events:none;
   display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 5px 3px}
-#dock>*{width:min(100%, var(--board-w, 540px) - 12px)}
+#dock>*{width:min(100%, calc(var(--board-w, 540px) - 12px))}
 
 #callRow{display:flex;justify-content:center;gap:7px}
 #callRow button{pointer-events:auto;cursor:pointer;font-family:inherit;border-radius:999px;font-size:12.5px;font-weight:600;
@@ -183,6 +183,47 @@ canvas#cv{display:block;border-radius:16px;touch-action:none}
 #ov .lessons-inline { max-height: 46vh; overflow-y: auto; }
 #ov a.btn { margin-top: 7px; }
 .foe .later { color: var(--dim); font-weight: 400; }
+
+/* ------------------------------------------------- start-up problem */
+
+/*
+ * Shown only when the game fails to start. It has to stand on its own: by the
+ * time it appears, none of the game's own code is necessarily running.
+ */
+#oops {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(94vw, 460px);
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #4d2833;
+  background: linear-gradient(180deg, rgba(43, 18, 26, .99), rgba(17, 7, 11, .99));
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .7);
+}
+#oops b { display: block; font-size: 13.5px; font-weight: 600; color: #ff9aa4; margin-bottom: 6px; }
+#oops span {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--dim);
+  word-break: break-word;
+  margin-bottom: 12px;
+}
+#oops button {
+  width: 100%;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 11px;
+  cursor: pointer;
+  border: 1px solid var(--line2);
+  background: rgba(255, 255, 255, .05);
+  color: var(--text);
+}
 
 /* ------------------------------------------------ lesson unlocked toast */
 
@@ -343,7 +384,7 @@ canvas#cv{display:block;border-radius:16px;touch-action:none}
     bottom: 8px;
     padding: 0;
     align-items: stretch;
-    width: min(252px, 100% - var(--board-w, 0px) - 26px);
+    width: min(252px, calc(100% - var(--board-w, 0px) - 26px));
   }
   #dock > * { width: 100%; }
   #callRow { flex-wrap: wrap; }

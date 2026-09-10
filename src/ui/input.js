@@ -2,8 +2,7 @@ import { TOWERS } from '../data/towers.js';
 import { S } from '../core/state.js';
 import { cell, cellOf, canvas } from '../core/view.js';
 import { unlockAudio, toggleSound, soundEnabled } from '../core/audio.js';
-import { startMusic, toggleMusic, musicEnabled } from '../core/music.js';
-import { on } from '../core/bus.js';
+import { on, emit } from '../core/bus.js';
 import { canBuild, placeTower, towerAt, upgradeTower, sellTower } from '../engine/towers.js';
 import { startWave } from '../engine/waves.js';
 import { say } from '../engine/effects.js';
@@ -60,7 +59,7 @@ function onBoardTap(ev) {
  */
 function wakeAudio() {
   unlockAudio();
-  startMusic();
+  emit('audio:wake', {});
 }
 
 export function initInput() {
@@ -93,15 +92,13 @@ export function initInput() {
     briefing();
   });
 
+  // One switch for the lot: blips and soundtrack together.
   el('sndBtn').addEventListener('click', e => {
-    e.currentTarget.classList.toggle('on', toggleSound());
+    const sound = toggleSound();
+    emit('audio:enabled', sound);
+    e.currentTarget.classList.toggle('on', sound);
   });
   el('sndBtn').classList.toggle('on', soundEnabled());
-
-  el('musBtn').addEventListener('click', e => {
-    e.currentTarget.classList.toggle('on', toggleMusic());
-  });
-  el('musBtn').classList.toggle('on', musicEnabled());
 
   el('pauseBtn').addEventListener('click', () => {
     if (S.phase !== 'wave' && S.phase !== 'build') return;

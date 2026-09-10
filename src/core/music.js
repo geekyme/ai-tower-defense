@@ -1,5 +1,4 @@
-import { audioContext } from './audio.js';
-import { getPref, setPref } from './storage.js';
+import { audioContext, soundEnabled } from './audio.js';
 import { on } from './bus.js';
 
 /**
@@ -10,6 +9,9 @@ import { on } from './bus.js';
  * Two moods, switched by the game's own events:
  *   calm    menus, briefings and the build phase — pad and a slow bass
  *   combat  a wave is running — drums, a driving bass and an arpeggio
+ *
+ * There is one audio switch in the HUD, not two, so the soundtrack follows the
+ * sound preference rather than keeping one of its own.
  */
 
 const BPM = 92;
@@ -33,7 +35,7 @@ const MOODS = {
   combat: { gain: 1, bass: [0, 3, 6, 8, 11, 14], hats: true, arp: true, kick: [0, 8, 11], snare: [4, 12] },
 };
 
-let enabled = getPref('music') !== false;
+let enabled = soundEnabled();
 let ctx = null;
 let bus = null;
 let noiseBuf = null;
@@ -44,10 +46,6 @@ let mood = 'calm';
 
 const stepDur = () => 60 / BPM / 4;
 const hz = midi => 440 * Math.pow(2, (midi - 69) / 12);
-
-export function musicEnabled() {
-  return enabled;
-}
 
 /* ------------------------------------------------------------------ voices */
 
@@ -175,7 +173,7 @@ function pump() {
  * from the same pointer handlers that unlock the sound effects; before that
  * it is a no-op and no context is created.
  */
-export function startMusic() {
+function startMusic() {
   if (!enabled || timer) return;
   ctx = audioContext();
   if (!ctx) return;
@@ -194,7 +192,7 @@ export function startMusic() {
 }
 
 /** Fades out and stops scheduling. `startMusic()` brings it back. */
-export function stopMusic(fade) {
+function stopMusic(fade) {
   if (timer) {
     clearInterval(timer);
     timer = 0;
@@ -206,16 +204,15 @@ export function stopMusic(fade) {
   }
 }
 
-export function toggleMusic() {
-  enabled = !enabled;
-  setPref('music', enabled);
+/** Follows the HUD's one sound switch. */
+function setEnabled(value) {
+  enabled = value;
   if (enabled) startMusic();
   else stopMusic(0.35);
-  return enabled;
 }
 
 /** 'calm' between waves, 'combat' during one. Crossfades the level. */
-export function setMood(next) {
+function setMood(next) {
   if (!MOODS[next] || next === mood) return;
   mood = next;
   if (!ctx || !bus || !timer) return;
@@ -226,6 +223,8 @@ export function setMood(next) {
 
 /** Wires the soundtrack to the run's events. Call once at start-up. */
 export function initMusic() {
+  on('audio:wake', startMusic);
+  on('audio:enabled', setEnabled);
   on('wave:started', () => setMood('combat'));
   on('run:brief', () => setMood('calm'));
   on('run:lost', () => stopMusic(1.6));
