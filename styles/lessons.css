@@ -1,0 +1,146 @@
+/* The playbook page. A normal scrolling document, unlike the game. */
+
+body {
+  background:
+    radial-gradient(120% 42% at 8% -6%, rgba(163, 121, 255, .18), transparent 60%),
+    radial-gradient(100% 36% at 96% 2%, rgba(53, 230, 213, .12), transparent 56%),
+    linear-gradient(180deg, #0a1020 0%, var(--void) 60%);
+  background-attachment: fixed;
+  min-height: 100%;
+}
+
+.wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 26px 18px 60px;
+}
+
+header.top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+header.top h1 {
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: -.03em;
+  margin: 0;
+  flex: 1;
+}
+header.top h1 em {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: .02em;
+  color: var(--dim);
+  font-weight: 500;
+  margin-top: 5px;
+}
+.back {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--cyan);
+  border: 1px solid #20514f;
+  background: rgba(53, 230, 213, .08);
+  border-radius: 20px;
+  padding: 7px 13px;
+}
+
+.lede {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--body);
+  border-left: 2px solid var(--line2);
+  padding-left: 12px;
+  margin: 0 0 18px;
+}
+
+/* Lifetime stats across every run in this browser. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.stats div {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(255, 255, 255, .03);
+}
+.stats b {
+  display: block;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.stats span { font-size: 9.5px; color: var(--dim); }
+
+/* Run history */
+.history { margin-top: 26px; }
+.history h2 {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--violet);
+  border-bottom: 1px solid var(--line2);
+  padding-bottom: 6px;
+  margin: 0 0 4px;
+}
+.run {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(43, 61, 94, .4);
+  font-size: 11.5px;
+  color: var(--body);
+}
+.run:first-of-type { border-top: 0; }
+.run b {
+  flex: 0 0 76px;
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.run .when { flex: 1; text-align: right; color: var(--dim); font-size: 10.5px; }
+.run .tag {
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid var(--line2);
+  color: var(--dim);
+}
+.run .tag.victory { color: var(--mint); border-color: #2a5f42; }
+.run .tag.defeat { color: var(--coral); border-color: #5a2c34; }
+
+.empty {
+  font-size: 11.5px;
+  color: var(--dim);
+  padding: 12px 0;
+}
+
+footer.foot {
+  margin-top: 34px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10.5px;
+  color: var(--dim);
+}
+.danger {
+  font-family: inherit;
+  font-size: 10.5px;
+  color: #ff9aa4;
+  background: rgba(80, 26, 38, .35);
+  border: 1px solid #4d2833;
+  border-radius: 20px;
+  padding: 6px 12px;
+  cursor: pointer;
+}

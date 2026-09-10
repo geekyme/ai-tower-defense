@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Head of AI: defence</title>
+<meta name="description" content="A tower defence game about running AI in a company. Twenty five waves across five eras, and every wave you clear unlocks a lesson.">
+<meta name="theme-color" content="#03050b">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="Head of AI: defence">
+<meta property="og:description" content="Hold the line against hallucinations, shadow AI, the frozen middle and the EU AI Act audit. Every wave cleared unlocks a lesson.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/game.css">
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="stat" id="sanityStat"><b id="sanityVal">16</b><span>sanity</span></div>
+    <div class="stat" id="focusStat"><b id="focusVal">300</b><span>focus</span></div>
+    <div class="stat" id="waveStat"><b id="waveVal">0/25</b><span>wave</span></div>
+    <div class="grow"></div>
+    <a class="iconbtn" href="lessons.html" id="bookBtn" title="Playbook" aria-label="Open the playbook">☰</a>
+    <button class="iconbtn on" id="sndBtn" type="button" title="Sound" aria-label="Toggle sound">♪</button>
+    <button class="iconbtn" id="pauseBtn" type="button" title="Pause" aria-label="Pause">❚❚</button>
+  </div>
+  <div id="sanityTrack"><div id="sanityFill"></div></div>
+
+  <div id="stage">
+    <canvas id="cv"></canvas>
+
+    <div id="callRow">
+      <button id="briefBtn" type="button">Brief</button>
+      <button id="callBtn" type="button"><span>Start wave 1</span><small id="callBonus"></small></button>
+    </div>
+
+    <!-- What a defence does, shown while choosing where to place it. -->
+    <div id="preview">
+      <div class="r1">
+        <div id="pvDot"></div><div id="pvName"></div><div id="pvCost"></div>
+        <button id="pvX" type="button" aria-label="Cancel">✕</button>
+      </div>
+      <div id="pvBlurb"></div>
+      <div id="pvNums"></div>
+      <div class="tg" id="pvTags"></div>
+      <div class="pvline good"><u>Use for</u><div id="pvGood"></div></div>
+      <div class="pvline weak"><u>Blind to</u><div id="pvWeak"></div></div>
+      <div id="pvHint"></div>
+    </div>
+
+    <!-- A placed defence: live stats, upgrade and sell. -->
+    <div id="inspect">
+      <div class="r1"><div id="insDot"></div><div id="insName"></div><div id="insLvl"></div></div>
+      <div id="insBlurb"></div>
+      <div id="insNums"></div>
+      <div class="btns">
+        <button id="upBtn" type="button">Upgrade</button>
+        <button id="sellBtn" type="button">Sell</button>
+        <button id="closeBtn" type="button" aria-label="Close">✕</button>
+      </div>
+    </div>
+
+    <!-- Menu, briefing, pause, defeat and victory all render in here. -->
+    <div id="ov"><div id="ovScroll"><div id="ovBox"></div></div></div>
+  </div>
+
+  <div id="shop"></div>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

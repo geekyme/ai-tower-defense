@@ -1,0 +1,171 @@
+/* Design tokens and the reset shared by the game and the playbook. */
+
+:root {
+  --void: #03050b;
+  --panel: #0e1524;
+  --line: #1d2941;
+  --line2: #2b3d5e;
+  --text: #e9effb;
+  --dim: #7d92b5;
+  --body: #9db0cd;
+
+  --cyan: #35e6d5;
+  --violet: #a379ff;
+  --amber: #ffc24b;
+  --mint: #6ee7a0;
+  --coral: #ff6b6b;
+
+  --font: 'Sora', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+a { color: var(--cyan); }
+
+/* Buttons rendered as links, so an <a> and a <button> can sit side by side. */
+.btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 12px;
+  border-radius: 13px;
+  cursor: pointer;
+  border: 1px solid #2a7d73;
+  color: #03130f;
+  background: linear-gradient(180deg, #57f2df, #22b6a6);
+}
+
+.btn.ghost {
+  background: transparent;
+  border-color: var(--line2);
+  color: var(--dim);
+  margin-top: 7px;
+  box-shadow: none;
+}
+
+/* Campaign progress bar, used on both pages. */
+.progrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10.5px;
+  color: var(--dim);
+  margin-bottom: 4px;
+}
+.progrow b { color: var(--cyan); font-weight: 600; }
+
+.prog {
+  height: 6px;
+  border-radius: 6px;
+  background: #121a2c;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.prog i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  transition: width .4s ease;
+}
+
+/* Lesson cards, shared by the victory screen and the playbook page. */
+.ls {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-top: 1px solid rgba(43, 61, 94, .5);
+}
+.ls:first-of-type { border-top: 0; }
+.ls img {
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .03);
+  flex: 0 0 auto;
+}
+.ls-body { min-width: 0; }
+.ls-meta {
+  font-size: 9.5px;
+  letter-spacing: .04em;
+  text-transform: lowercase;
+  color: var(--dim);
+  margin-bottom: 3px;
+}
+.ls h3 {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0 0 5px;
+  letter-spacing: -.01em;
+}
+.ls p {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--body);
+  margin: 0 0 4px;
+}
+.ls p u {
+  display: block;
+  text-decoration: none;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.ls-counter u { color: var(--cyan); }
+.ls-lesson u { color: var(--violet); }
+.ls-locked { color: var(--dim); font-style: italic; }
+
+.ls.locked { opacity: .45; }
+.ls.locked img { filter: grayscale(1); }
+
+.ls-era { margin-bottom: 18px; }
+.ls-era-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line2);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+.ls-era-head h2 {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--violet);
+  margin: 0;
+}
+.ls-era-head span {
+  font-size: 10.5px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.ls-era-sub {
+  font-size: 11px;
+  color: var(--dim);
+  margin: 0 0 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
