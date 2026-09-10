@@ -7,10 +7,16 @@ import { el, refs, esc } from './dom.js';
 import { glyph } from './glyphs.js';
 
 /**
- * The two bottom sheets over the board:
+ * The two sheets in the board's bottom dock:
  *   #preview  what a defence does, shown while you are choosing where to put it
  *   #inspect  what a placed defence is doing now, with upgrade and sell
+ *
+ * The preview stays a one-line strip that pointer events fall straight through
+ * (see `#preview` in game.css), so reading about a defence never takes the
+ * board away from you. Everything below that line only opens on request.
  */
+
+let detailed = false;
 
 function paintDot(node, key, colour, px) {
   node.style.background = 'rgba(255,255,255,.06)';
@@ -25,6 +31,7 @@ export function isPreviewOpen() {
 export function showPreview(key) {
   const d = TOWERS[key];
   const notes = TOWER_NOTES[key];
+  const short = Math.ceil(d.cost - S.focus);
 
   paintDot(el('pvDot'), key, d.col, 17);
   el('pvName').textContent = d.name;
@@ -32,7 +39,7 @@ export function showPreview(key) {
   const cost = el('pvCost');
   cost.textContent = d.cost + ' focus';
   cost.style.color = d.col;
-  cost.classList.toggle('poor', S.focus < d.cost);
+  cost.classList.toggle('poor', short > 0);
 
   el('pvBlurb').textContent = d.blurb;
   el('pvNums').innerHTML =
@@ -45,15 +52,38 @@ export function showPreview(key) {
     .join('');
   el('pvGood').textContent = notes.good;
   el('pvWeak').textContent = notes.weak;
-  el('pvHint').textContent = S.focus < d.cost
-    ? 'You are ' + Math.ceil(d.cost - S.focus) + ' focus short. Kill something first, or sell a defence you are not using.'
-    : notes.hint;
+
+  const hint = el('pvHint');
+  hint.textContent = short > 0
+    ? short + ' focus short. Sell something, or wait for a kill.'
+    : detailed ? notes.hint : 'Tap a lit plot to place it.';
+  hint.classList.toggle('warn', short > 0);
 
   refs.preview.classList.add('show');
 }
 
+/** Opens or closes the long copy under the strip. */
+export function setPreviewDetails(open) {
+  detailed = !!open;
+  refs.preview.classList.toggle('open', detailed);
+  const btn = el('pvInfo');
+  btn.textContent = detailed ? 'Hide' : 'Details';
+  btn.setAttribute('aria-expanded', String(detailed));
+  if (S.build && isPreviewOpen()) showPreview(S.build);
+}
+
+export function togglePreviewDetails() {
+  setPreviewDetails(!detailed);
+}
+
+/** Folds the sheet back to its strip, leaving the chosen defence selected. */
+export function collapsePreview() {
+  if (detailed) setPreviewDetails(false);
+}
+
 export function hidePreview() {
   refs.preview.classList.remove('show');
+  setPreviewDetails(false);
 }
 
 export function showInspect(tower) {

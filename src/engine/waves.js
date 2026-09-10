@@ -5,8 +5,13 @@ import { S } from '../core/state.js';
 import { W, H, cell } from '../core/view.js';
 import { emit } from '../core/bus.js';
 import { recordBestWave, unlockLesson } from '../core/storage.js';
+import { sfx } from '../core/audio.js';
 import { spawn } from './spawn.js';
-import { say, flash, banner } from './effects.js';
+import { say, flash, banner, cheer, confetti, shock } from './effects.js';
+
+/** Seconds the wave-clear celebration holds the board before the briefing. */
+const CHEER_HOLD = 2.4;
+const CONFETTI = ['#6ee7a0', '#35e6d5', '#a379ff', '#ffc24b', '#eafff4'];
 
 /** Flattens a wave's spawn groups into a time-ordered spawn queue. */
 export function makeQueue(n) {
@@ -42,15 +47,26 @@ function waveCleared() {
   const lesson = S.wave <= CAMPAIGN_WAVES ? lessonForWave(S.wave) : null;
   const isNew = lesson ? unlockLesson(S.wave) : false;
 
-  say(W / 2, H * 0.44, 'wave clear  +' + reward, '#6ee7a0', cell * 0.4);
-  if (isNew) {
-    say(W / 2, H * 0.52, 'lesson unlocked', '#a379ff', cell * 0.34);
-    say(W / 2, H * 0.58, lesson.title, '#35e6d5', cell * 0.26);
-    flash('#a379ff', 0.35);
-  }
+  const lines = [{ t: '+' + reward + ' focus banked', c: '#35e6d5' }];
+  if (S.sanity === S.max) lines.push({ t: 'not a scratch on you', c: '#6ee7a0' });
+  if (isNew) lines.push({ t: 'lesson unlocked · ' + lesson.title, c: '#a379ff' });
+
+  cheer('Wave ' + S.wave + ' cleared', S.endless ? 'endless ' + S.endless : waveTitle(S.wave),
+    lines, CHEER_HOLD);
+  confetti(120, CONFETTI);
+  shock(W / 2, H * 0.4, cell * 5, '#6ee7a0', 0.7);
+  flash('#6ee7a0', 0.45);
+  sfx.clear();
 
   emit('wave:cleared', { wave: S.wave, reward, lesson: isNew ? lesson : null });
 
+  // Hold here so the celebration is seen, rather than being buried under the
+  // next briefing a frame later.
+  S.cheerT = CHEER_HOLD;
+}
+
+/** Runs once the celebration has had its moment. */
+function afterCheer() {
   if (S.wave >= CAMPAIGN_WAVES && !S.endless) {
     emit('run:won', {});
     return;
@@ -59,6 +75,11 @@ function waveCleared() {
 }
 
 export function stepWave(dt) {
+  if (S.cheerT > 0) {
+    S.cheerT -= dt;
+    if (S.cheerT <= 0) afterCheer();
+    return;
+  }
   S.t += dt;
   while (S.queue.length && S.queue[0].t <= S.t) spawn(S.queue.shift().k, 0);
   if (!S.queue.length && !S.foes.length) waveCleared();

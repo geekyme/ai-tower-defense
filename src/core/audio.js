@@ -3,6 +3,9 @@ import { getPref, setPref } from './storage.js';
 /**
  * Tiny WebAudio blip synth. No files, no library — every sound is one
  * oscillator with a decaying gain envelope.
+ *
+ * The context is shared with `core/music.js`: one context per page is the
+ * limit browsers actually enforce, so both go through `audioContext()`.
  */
 
 let ac = null;
@@ -19,10 +22,22 @@ export function toggleSound() {
   return enabled;
 }
 
+/** The shared AudioContext, created on first use. Null if the browser has none. */
+export function audioContext() {
+  if (ac) return ac;
+  try {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+  } catch (e) {
+    return null;
+  }
+  return ac;
+}
+
 /** Browsers only allow audio after a gesture; call this from a pointer handler. */
 export function unlockAudio() {
-  if (!enabled || ac) return;
-  tone(880, 0.02, 'sine', 0.008);
+  const c = audioContext();
+  if (c && c.state === 'suspended') c.resume();
+  return c;
 }
 
 /**
@@ -34,26 +49,26 @@ export function unlockAudio() {
  */
 export function tone(freq, dur, type, vol, to) {
   if (!enabled) return;
-  if (!ac) {
-    try {
-      ac = new (window.AudioContext || window.webkitAudioContext)();
-    } catch (e) {
-      return;
-    }
-  }
-  if (ac.state === 'suspended') ac.resume();
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
+  const c = audioContext();
+  if (!c) return;
+  if (c.state === 'suspended') c.resume();
+  const osc = c.createOscillator();
+  const gain = c.createGain();
   osc.type = type || 'square';
-  osc.frequency.setValueAtTime(freq, ac.currentTime);
-  if (to) osc.frequency.exponentialRampToValueAtTime(Math.max(30, to), ac.currentTime + dur);
-  gain.gain.setValueAtTime(0.0001, ac.currentTime);
-  gain.gain.exponentialRampToValueAtTime(vol || 0.05, ac.currentTime + 0.008);
-  gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+  osc.frequency.setValueAtTime(freq, c.currentTime);
+  if (to) osc.frequency.exponentialRampToValueAtTime(Math.max(30, to), c.currentTime + dur);
+  gain.gain.setValueAtTime(0.0001, c.currentTime);
+  gain.gain.exponentialRampToValueAtTime(vol || 0.05, c.currentTime + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
   osc.connect(gain);
-  gain.connect(ac.destination);
+  gain.connect(c.destination);
   osc.start();
-  osc.stop(ac.currentTime + dur + 0.03);
+  osc.stop(c.currentTime + dur + 0.03);
+}
+
+/** Plays `notes` as [freq, delayMs] pairs, so fanfares stay one-liners. */
+function riff(notes, dur, type, vol) {
+  for (const [f, at] of notes) setTimeout(() => tone(f, dur, type, vol), at);
 }
 
 export const sfx = {
@@ -74,6 +89,12 @@ export const sfx = {
   power() { tone(120, 0.5, 'sawtooth', 0.085, 700); },
   wreck() { tone(300, 0.5, 'square', 0.075, 45); },
   nova() { tone(90, 0.4, 'sine', 0.09, 600); },
-  unlock() { [660, 880, 1175].forEach((f, i) => setTimeout(() => tone(f, 0.18, 'sine', 0.045), i * 90)); },
-  win() { [523, 659, 784, 1046, 1318].forEach((f, i) => setTimeout(() => tone(f, 0.24, 'sine', 0.055), i * 110)); },
+  unlock() { riff([[660, 0], [880, 90], [1175, 180]], 0.18, 'sine', 0.045); },
+  /** Wave cleared: a rising major fanfare with a shimmer on top. */
+  clear() {
+    riff([[523, 0], [659, 80], [784, 160], [1046, 240]], 0.26, 'triangle', 0.075);
+    riff([[1568, 300], [2093, 400]], 0.34, 'sine', 0.035);
+    tone(131, 0.5, 'sine', 0.06);
+  },
+  win() { riff([[523, 0], [659, 110], [784, 220], [1046, 330], [1318, 440]], 0.24, 'sine', 0.055); },
 };

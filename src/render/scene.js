@@ -3,7 +3,7 @@ import { W, H, dpr } from '../core/view.js';
 import { S } from '../core/state.js';
 import { drawBackground, drawSky, drawFlow, drawPlots, drawSludge } from './board.js';
 import { drawFoe, drawTower } from './entities.js';
-import { drawFx, drawParts, drawFloats, drawBossBar, drawBanner } from './fx.js';
+import { drawFx, drawParts, drawFloats, drawBossBar, drawBanner, drawCheer, drawConfetti } from './fx.js';
 import { clock } from './clock.js';
 
 /** Sanity level below which the board starts bleeding red at the edges. */
@@ -53,6 +53,8 @@ export function render(dt, ghost) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   drawBossBar();
   drawBanner(dt);
+  drawCheer(dt);
+  drawConfetti(dt);
 
   if (S.flashT > 0 && S.flashCol) {
     ctx.globalAlpha = Math.min(0.3, S.flashT * 0.7);

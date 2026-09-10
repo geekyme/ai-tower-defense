@@ -269,8 +269,11 @@ export function initScreens() {
   on('run:won', victory);
   on('wave:cleared', ({ lesson }) => {
     if (!lesson) return;
-    sfx.unlock();
-    toast('Lesson ' + lesson.wave + ' unlocked', lesson.title);
+    // A beat behind the celebration, so the two land as two moments.
+    setTimeout(() => {
+      sfx.unlock();
+      toast('Lesson ' + lesson.wave + ' unlocked', lesson.title);
+    }, 900);
   });
   on('wave:started', () => {
     refs.callRow.classList.add('hidden');

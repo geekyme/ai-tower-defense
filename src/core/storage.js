@@ -20,7 +20,7 @@ function emptyProgress() {
     totals: { runs: 0, wavesCleared: 0, handled: 0, leaked: 0, defencesLost: 0, playMs: 0 },
     /** Newest first, capped at MAX_SESSIONS. */
     sessions: [],
-    prefs: { sound: true },
+    prefs: { sound: true, music: true },
   };
 }
 

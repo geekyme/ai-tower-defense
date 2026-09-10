@@ -1,5 +1,5 @@
 import { S } from '../core/state.js';
-import { cell } from '../core/view.js';
+import { cell, W } from '../core/view.js';
 
 /**
  * Queues cosmetic effects onto the run state. These only push records —
@@ -49,4 +49,35 @@ export function shock(x, y, radius, colour, life) {
 
 export function banner(txt, sub, secs) {
   S.banner = { txt, sub, l: secs || 2.8 };
+}
+
+/**
+ * The wave-clear card: a big centred title that pops in, holds, and fades.
+ * `lines` are the smaller rows under it.
+ */
+export function cheer(txt, sub, lines, secs) {
+  const life = secs || 2.6;
+  S.cheer = { txt, sub, lines: lines || [], l: life, m: life };
+}
+
+/** Paper ribbons that fall and spin. Cosmetic only, like everything here. */
+export function confetti(count, colours) {
+  for (let i = 0; i < count; i++) {
+    if (S.conf.length > MAX_PARTICLES) return;
+    const life = 1.6 + Math.random() * 1.4;
+    S.conf.push({
+      x: Math.random() * W,
+      y: -cell * (0.2 + Math.random() * 2.2),
+      vx: (Math.random() - 0.5) * cell * 2.4,
+      vy: cell * (1.2 + Math.random() * 1.6),
+      g: cell * 2.2,
+      d: 0.995,
+      spin: (Math.random() - 0.5) * 9,
+      a: Math.random() * 6.283,
+      sq: cell * (0.12 + Math.random() * 0.12),
+      l: life, m: life,
+      c: colours[(Math.random() * colours.length) | 0],
+      r: 1,
+    });
+  }
 }

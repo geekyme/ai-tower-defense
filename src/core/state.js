@@ -27,6 +27,8 @@ export function createRun() {
     // timers
     t: 0,
     buildT: BUILD_TIME,
+    /** Seconds the wave-clear celebration still holds the briefing back. */
+    cheerT: 0,
 
     // entities
     queue: [],
@@ -38,8 +40,10 @@ export function createRun() {
     // presentation-only, cleared freely on resize
     fx: [],
     parts: [],
+    conf: [],
     floats: [],
     banner: null,
+    cheer: null,
     shake: 0,
     flashCol: null,
     flashT: 0,
