@@ -4,10 +4,11 @@ import { S, newRun, runDuration } from '../core/state.js';
 import { layout } from '../core/view.js';
 import { on } from '../core/bus.js';
 import { sfx } from '../core/audio.js';
-import { progress, recordSession, unlockedCount } from '../core/storage.js';
+import { progress, recordSession, unlockedCount, clearSavedRun } from '../core/storage.js';
 import { scale } from '../engine/spawn.js';
 import { startWave, nextBrief, beginBuildPhase } from '../engine/waves.js';
-import { hasCheckpoint, retryWave, clearCheckpoint } from '../engine/checkpoint.js';
+import { hasCheckpoint, retryWave, clearCheckpoint, resumableRun, resumeRun,
+  saveEndlessEntry } from '../engine/checkpoint.js';
 import { threatThumbnail } from '../render/shapes.js';
 import { el, refs, esc } from './dom.js';
 import { buildShop } from './shop.js';
@@ -118,6 +119,16 @@ export function briefing() {
 
 /* ------------------------------------------------------------------- menu */
 
+/**
+ * How a wave is named away from the board: campaign waves count out of the
+ * campaign, endless ones count from the end of it.
+ */
+function waveLabel(n) {
+  return n > CAMPAIGN_WAVES
+    ? 'endless ' + (n - CAMPAIGN_WAVES)
+    : 'wave ' + n + ' of ' + CAMPAIGN_WAVES;
+}
+
 export function menu() {
   newRun();
   clearCheckpoint();
@@ -129,26 +140,50 @@ export function menu() {
   hideInspect();
 
   const best = progress.bestWave;
-  const resume = best > 0
+  const record = best > 0
     ? '<p class="lore">Best so far: <b>wave ' + best + '</b> · <b>' + unlockedCount() +
       ' of ' + CAMPAIGN_WAVES + '</b> lessons unlocked. Progress is saved in this browser.</p>'
+    : '';
+
+  // The playbook is a separate page and a phone drops tabs, so a run is easy
+  // to walk out of by accident. It waits here, at the top of the wave it was
+  // on, rather than being lost — an endless run especially, which otherwise
+  // costs twenty five waves to get back to.
+  const open = resumableRun();
+  const where = open ? waveLabel(open.wave) : '';
+  const built = open ? open.towers.length : 0;
+  const pickUp = open
+    ? '<p class="lore">You left a run at <b>' + where + '</b>, with <b>' + built + '</b> defence' +
+      (built === 1 ? '' : 's') + ' standing and <b>' + Math.floor(open.focus) +
+      '</b> focus. It picks up at the top of that wave.</p>' +
+      '<button id="pickup" type="button">Back into ' + where + '</button>'
     : '';
 
   openOverlay(
     '<h1>Head of AI<em>defence</em></h1>' +
     '<p class="kick">Twenty five waves across five eras, then it never stops. The problems change as you get better at the job.</p>' +
-    resume +
+    pickUp + record +
     '<p class="lore">Threats walk from <b>inbound</b> to <b>you</b>. Kills pay <b>focus</b>. Anything that lands costs <b>sanity</b>, and you only have sixteen.</p>' +
     '<p class="lore">Tap a defence to pick it, then tap a lit plot to place it. Tap the same defence again to read what it is for.</p>' +
     '<p class="lore">Every defence has one thing it is the only answer to. Read the briefing before each wave, because armour, invisibility and immunity are all counters to a specific choice you made earlier.</p>' +
     '<p class="lore">Bosses freeze, downgrade, hijack and permanently delete your defences. Anything you build in one tidy cluster will be gone by era four.</p>' +
     '<p class="lore">Every wave you clear unlocks one lesson in <b>the playbook</b>. Clear all twenty five and the whole thing is yours.</p>' +
-    '<button id="go" type="button">Take the role</button>' +
+    '<button' + (open ? ' class="ghost"' : '') + ' id="go" type="button">' +
+      (open ? 'Start a new run instead' : 'Take the role') + '</button>' +
     '<a class="btn ghost" href="lessons.html">Open the playbook</a>' +
     creditHTML());
 
+  if (open) {
+    el('pickup').onclick = () => {
+      closeOverlay();
+      if (!resumeRun()) menu();
+      invalidateHud();
+      hud();
+    };
+  }
   el('go').onclick = () => {
     closeOverlay();
+    clearSavedRun();
     nextBrief();
   };
 }
@@ -170,6 +205,7 @@ export function pauseScreen() {
   el('quit').onclick = () => {
     closeOverlay();
     endSession('abandoned');
+    clearSavedRun();
     menu();
   };
 }
@@ -186,14 +222,14 @@ function statBlock() {
 }
 
 /**
- * Writes the finished run to localStorage. Keyed on the run's start time, so
- * calling it again for the same run (victory, then the endless continuation
- * ending) updates that row instead of adding another.
+ * Writes the finished run to localStorage. Keyed on the run's id, so calling
+ * it again for the same run (victory, then the endless continuation ending,
+ * or an end either side of a resume) updates that row instead of adding one.
  */
 function endSession(outcome) {
   if (outcome === 'abandoned' && S.best === 0) return;
   recordSession({
-    runId: S.startedAt,
+    runId: S.runId,
     outcome,
     wave: S.wave,
     bestWave: S.best,
@@ -269,7 +305,7 @@ export function defeat() {
       hud();
     };
   }
-  el('again').onclick = () => { closeOverlay(); menu(); };
+  el('again').onclick = () => { closeOverlay(); clearSavedRun(); menu(); };
   wireShareButtons();
 }
 
@@ -279,6 +315,10 @@ export function victory() {
   refs.callRow.classList.add('hidden');
   hideInspect();
   endSession('victory');
+  // Winning is not the end of the run: what is waiting to be picked up now is
+  // the endless continuation, so leaving this screen does not close the door
+  // on it.
+  saveEndlessEntry();
 
   openOverlay(
     '<div class="eyebrow"><b>Campaign complete</b><i></i><s>' + CAMPAIGN_WAVES + ' of ' + CAMPAIGN_WAVES + '</s></div>' +
@@ -297,7 +337,7 @@ export function victory() {
     nextBrief();
   };
   wireShareButtons();
-  el('menu2').onclick = () => { closeOverlay(); menu(); };
+  el('menu2').onclick = () => { closeOverlay(); clearSavedRun(); menu(); };
 }
 
 /** Wires the engine's events to the screens. Call once at start-up. */

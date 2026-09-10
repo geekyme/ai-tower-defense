@@ -20,6 +20,8 @@ function emptyProgress() {
     totals: { runs: 0, wavesCleared: 0, handled: 0, leaked: 0, defencesLost: 0, playMs: 0 },
     /** Newest first, capped at MAX_SESSIONS. */
     sessions: [],
+    /** The run in progress, if there is one. See `saveRun` below. */
+    run: null,
     prefs: { sound: true },
   };
 }
@@ -115,6 +117,32 @@ export function recordSession(session) {
   for (const [field, total] of Object.entries(COUNTED)) {
     t[total] += (row[field] || 0) - (prev ? prev[field] || 0 : 0);
   }
+  persist();
+}
+
+/* -------------------------------------------------------------- open run */
+
+/**
+ * The run in progress, held as the snapshot taken at the top of the current
+ * wave. The playbook is a separate page, so opening it — or a reload, or the
+ * tab being dropped on a phone — takes the live run with it. Keeping the
+ * snapshot here means coming back offers to pick the run up rather than
+ * sending you to wave one, which matters most past the campaign, where the
+ * only other way back into endless is clearing all twenty five again.
+ */
+export function savedRun() {
+  return progress.run;
+}
+
+export function saveRun(run) {
+  progress.run = run;
+  persist();
+}
+
+/** Called when the player is done with the run, not when they walk away. */
+export function clearSavedRun() {
+  if (!progress.run) return;
+  progress.run = null;
   persist();
 }
 
