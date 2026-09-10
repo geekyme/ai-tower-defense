@@ -12,6 +12,7 @@ import { refs } from './ui/dom.js';
 import { hud } from './ui/hud.js';
 import { initInput, ghost } from './ui/input.js';
 import { initScreens, menu } from './ui/screens.js';
+import { initCoach, coachHoldsBuild } from './ui/coach.js';
 
 /** Longest frame delta the simulation will accept, so a backgrounded tab
  *  resumes rather than fast-forwarding. */
@@ -27,7 +28,9 @@ function step(dt) {
   if (S.phase === 'wave') {
     stepWave(dt);
   } else {
-    S.buildT -= dt;
+    // The first run's walkthrough holds the clock: a wave that starts itself
+    // while someone is still reading what a plot is teaches the wrong lesson.
+    if (!coachHoldsBuild()) S.buildT -= dt;
     refs.callBonus.textContent = S.buildT > 0 ? '+' + Math.round(S.buildT * BANK_RATE) : '';
     if (S.buildT <= 0) startWave();
   }
@@ -68,6 +71,7 @@ function boot(label, fn) {
 boot('The board could not be set up', () => initView(refs.canvas, refs.stage, onLayoutChange));
 boot('The screens could not be wired up', initScreens);
 boot('The controls could not be wired up', initInput);
+boot('The walkthrough could not be wired up', initCoach);
 boot('The menu could not open', menu);
 
 /*

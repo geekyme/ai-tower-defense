@@ -18,6 +18,7 @@ import { lessonListHTML, progressHTML } from './lesson-list.js';
 import { shareRun, saveCard } from './share-card.js';
 import { toast } from './toast.js';
 import { creditHTML } from './credit.js';
+import { startCoach, endCoach, coachPending } from './coach.js';
 
 /**
  * Recedes the shop while something else owns the screen — a menu, a briefing,
@@ -85,6 +86,7 @@ export function briefing() {
   const n = S.wave;
   const era = waveEra(n);
   const { direct, later } = waveRoster(n);
+  const first = n === 1 && !S.endless && progress.bestWave === 0;
 
   const rows = direct.map(k => threatRow(k, false)).join('') +
     later.map(k => threatRow(k, true)).join('');
@@ -99,12 +101,20 @@ export function briefing() {
     : '<p class="lore">Clear this wave and lesson ' + n + ' of ' + CAMPAIGN_WAVES +
       ' opens in your <b>playbook</b>. You have ' + unlockedCount() + ' so far.</p>';
 
+  // A list of monsters with jargon on it means nothing until somebody says
+  // what the list is for, which is the whole point of the screen.
+  const why = first
+    ? '<p class="kick">This is the briefing before every wave. It names what is walking in, ' +
+      'so you can build the answer before it arrives.</p>'
+    : '';
+
   openOverlay(
     '<div class="eyebrow"><b>' + esc(era.n) + '</b><i></i><s>wave ' + n +
       (S.endless ? '' : ' of ' + CAMPAIGN_WAVES) + '</s></div>' +
     (S.endless ? '' : progressHTML()) +
     '<h1 class="sm">' + esc(waveTitle(n)) + '</h1>' +
-    '<p class="kick">' + esc(era.s) + '</p>' + mods + unlock +
+    '<p class="kick">' + esc(era.s) + '</p>' + why + mods + unlock +
+    '<div class="rowhead">Arriving this wave</div>' +
     '<div class="rows">' + rows + '</div>' +
     '<button id="deploy" type="button">Build defences</button>');
 
@@ -112,6 +122,9 @@ export function briefing() {
     closeOverlay();
     beginBuildPhase();
     refs.callRow.classList.remove('hidden');
+    // Nothing on the board says what to do with it, so on a first run the
+    // walkthrough takes over from here.
+    startCoach();
     invalidateHud();
     hud();
   };
@@ -129,9 +142,36 @@ function waveLabel(n) {
     : 'wave ' + n + ' of ' + CAMPAIGN_WAVES;
 }
 
+/**
+ * The three taps the whole game is made of, said before anybody has to guess
+ * at them. This is the landing page for most people who ever see the game, so
+ * it has to answer "what do I do" above the button, in a glance.
+ */
+function stepsHTML() {
+  // Deliberately not "the row at the bottom": on a wide screen the shop is a
+  // rail down the side, and a step that points at the wrong edge is worse
+  // than one that points at nothing.
+  return '<ol class="steps">' +
+    '<li><b>1</b><span>Pick a defence from the shop</span></li>' +
+    '<li><b>2</b><span>Tap a lit hex to place it beside the lane</span></li>' +
+    '<li><b>3</b><span>Kill everything before it walks off your end</span></li>' +
+    '</ol>';
+}
+
+/** The two numbers on the bar, in the colours they are shown in. */
+function legendHTML() {
+  return '<ul class="legend">' +
+    '<li class="cy"><b>Focus</b> buys defences. Every kill pays more.</li>' +
+    '<li class="co"><b>Sanity</b> is your health. You get sixteen, and anything ' +
+      'that reaches the end takes some.</li>' +
+    '</ul>';
+}
+
 export function menu() {
   newRun();
   clearCheckpoint();
+  // A restart in the middle of the walkthrough leaves its spotlight lit.
+  endCoach();
   layout();
   buildShop();
   invalidateHud();
@@ -141,7 +181,7 @@ export function menu() {
 
   const best = progress.bestWave;
   const record = best > 0
-    ? '<p class="lore">Best so far: <b>wave ' + best + '</b> · <b>' + unlockedCount() +
+    ? '<p class="record">Best so far: <b>wave ' + best + '</b> · <b>' + unlockedCount() +
       ' of ' + CAMPAIGN_WAVES + '</b> lessons unlocked. Progress is saved in this browser.</p>'
     : '';
 
@@ -159,17 +199,36 @@ export function menu() {
       '<button id="pickup" type="button">Back into ' + where + '</button>'
     : '';
 
+  // Everything below the button used to sit above it, and a first-time player
+  // met six paragraphs before they met a game. None of it is gone — it is
+  // folded, and the walkthrough teaches the parts that matter on the way in.
+  const deeper =
+    '<details class="more"><summary>How a run actually goes</summary>' +
+    '<p class="lore">Every defence is the <b>only</b> answer to something. Read the briefing ' +
+      'before each wave: armour, invisibility and immunity are all counters to a choice you ' +
+      'made earlier.</p>' +
+    '<p class="lore">Bosses freeze, downgrade, hijack and permanently delete your defences. ' +
+      'Anything you build in one tidy cluster will be gone by era four.</p>' +
+    '<p class="lore">Twenty five waves across five eras, then an endless mode that does not ' +
+      'stop. The problems change as you get better at the job.</p>' +
+    '<p class="lore">Every wave you clear unlocks one lesson in <b>the playbook</b>, for good. ' +
+      'Clear all twenty five and the whole thing is yours.</p>' +
+    '</details>';
+
   openOverlay(
     '<h1>Head of AI<em>defence</em></h1>' +
-    '<p class="kick">Twenty five waves across five eras, then it never stops. The problems change as you get better at the job.</p>' +
-    pickUp + record +
-    '<p class="lore">Threats walk from <b>inbound</b> to <b>you</b>. Kills pay <b>focus</b>. Anything that lands costs <b>sanity</b>, and you only have sixteen.</p>' +
-    '<p class="lore">Tap a defence to pick it, then tap a lit plot to place it. Tap the same defence again to read what it is for.</p>' +
-    '<p class="lore">Every defence has one thing it is the only answer to. Read the briefing before each wave, because armour, invisibility and immunity are all counters to a specific choice you made earlier.</p>' +
-    '<p class="lore">Bosses freeze, downgrade, hijack and permanently delete your defences. Anything you build in one tidy cluster will be gone by era four.</p>' +
-    '<p class="lore">Every wave you clear unlocks one lesson in <b>the playbook</b>. Clear all twenty five and the whole thing is yours.</p>' +
+    '<p class="kick">You run AI at a company. Hallucinations, shadow AI and an audit are ' +
+      'walking down that lane. Build the controls that stop them.</p>' +
+    pickUp +
+    // Only for somebody who has not played: the three taps go above the button
+    // so they are read before it is pressed, and a returning player gets a
+    // short menu instead of a lesson they have already had.
+    (coachPending() ? stepsHTML() + legendHTML() : '') +
     '<button' + (open ? ' class="ghost"' : '') + ' id="go" type="button">' +
       (open ? 'Start a new run instead' : 'Take the role') + '</button>' +
+    (coachPending() ? '<p class="under">Wave one walks you through it, tap by tap.</p>' : '') +
+    record +
+    deeper +
     '<a class="btn ghost" href="lessons.html">Open the playbook</a>' +
     creditHTML());
 

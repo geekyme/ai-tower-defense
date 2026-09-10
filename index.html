@@ -95,6 +95,19 @@
     -->
     <div id="dock">
       <!--
+        The first run's walkthrough. Names the next tap, waits for it, and
+        holds the build clock while it does. Shown once, ever.
+      -->
+      <div id="coach" hidden>
+        <b id="coachNum"></b>
+        <div class="ct">
+          <strong id="coachTitle"></strong>
+          <span id="coachBody"></span>
+        </div>
+        <button id="coachSkip" type="button">Skip</button>
+      </div>
+
+      <!--
         While a defence is selected and still homeless: where it goes, and how
         to read up on it. Takes no pointer events, so it never blocks a tap.
       -->
