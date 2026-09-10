@@ -10,6 +10,11 @@ guardrails, observability, a model router, a governance council, a kill switch).
 defence is the *only* answer to something, so the game is really a quiz about which
 control you skipped.
 
+The menu says what the three taps are before it offers a button, and the first wave is
+walked through one tap at a time: pick a defence, put it beside the lane, spend the rest,
+call the wave. The build clock is held while the walkthrough is talking, so a first wave
+never starts on its own, and one tap on **Skip** retires it for good.
+
 **Clearing a wave permanently unlocks that wave's lesson** in [the playbook](lessons.html).
 Twenty five waves, twenty five lessons, and the full list once you finish the campaign.
 

@@ -1,6 +1,7 @@
 import { TOWERS } from '../data/towers.js';
 import { S } from '../core/state.js';
 import { el, refs } from './dom.js';
+import { coachSpeaking } from './coach.js';
 
 /**
  * The one-line strip above the call-wave row, shown for as long as a defence
@@ -22,10 +23,12 @@ export function placeHint() {
   const bar = el('placeHint');
   if (!bar) return;
 
-  // A sheet already says more than this strip can, and a screen owns the
-  // whole board, so in either case the strip stands down.
+  // A sheet already says more than this strip can, a screen owns the whole
+  // board, and the first-run walkthrough is saying the same thing at greater
+  // length — in any of those cases the strip stands down.
   const busy = refs.preview.classList.contains('show')
-    || refs.inspect.classList.contains('show');
+    || refs.inspect.classList.contains('show')
+    || coachSpeaking();
   const key = S.build && !busy ? S.build + '|' + (S.focus >= (TOWERS[S.build] || {}).cost) : '';
   if (key === last) return;
   last = key;

@@ -4,6 +4,7 @@ import { S } from '../core/state.js';
 import { el, refs } from './dom.js';
 import { fillInspect, showPreview, isPreviewOpen } from './panels.js';
 import { placeHint, invalidateHint } from './place-hint.js';
+import { coachTick } from './coach.js';
 
 /**
  * The top status bar and the shop's affordability state.
@@ -21,8 +22,10 @@ export function invalidateHud() {
 }
 
 export function hud() {
-  // Outside the signature check below: the strip also answers to the sheets
-  // opening and closing, which leave every number on the bar untouched.
+  // Both of these live outside the signature check below. The walkthrough
+  // steps on things the bar cannot see, and the strip also answers to the
+  // sheets opening and closing, which leave every number on the bar untouched.
+  coachTick();
   placeHint();
 
   const key = S.sanity + '|' + Math.floor(S.focus) + '|' + S.wave + '|' + S.towers.length;
