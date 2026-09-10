@@ -94,6 +94,15 @@
       clear space as the screen can spare.
     -->
     <div id="dock">
+      <!--
+        While a defence is selected and still homeless: where it goes, and how
+        to read up on it. Takes no pointer events, so it never blocks a tap.
+      -->
+      <div id="placeHint" hidden>
+        <span id="phMain"></span>
+        <em id="phMore"><i>i</i>tap the card again for details</em>
+      </div>
+
       <div id="callRow">
         <button id="briefBtn" type="button">Brief</button>
         <button id="callBtn" type="button"><span>Start wave 1</span><small id="callBonus"></small></button>

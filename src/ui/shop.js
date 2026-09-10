@@ -1,7 +1,6 @@
 import { TOWERS, TOWER_KEYS } from '../data/towers.js';
 import { S } from '../core/state.js';
-import { W, H, cell } from '../core/view.js';
-import { say } from '../engine/effects.js';
+import { clock } from '../render/clock.js';
 import { refs } from './dom.js';
 import { glyph } from './glyphs.js';
 import { showPreview, hidePreview, hideInspect, isPreviewOpen } from './panels.js';
@@ -19,10 +18,15 @@ export function buildShop() {
     card.style.color = d.col;
     card.type = 'button';
     card.setAttribute('aria-label', d.name + ', ' + d.cost + ' focus');
+    // Both of these are rewritten by `hud()` the moment the card is selected.
+    card.setAttribute('aria-pressed', 'false');
+    // The badge only shows once the card is selected, which is the only time
+    // tapping it again does anything other than select it.
     card.innerHTML =
       '<div class="g">' + glyph(key, d.col) + '</div>' +
       '<div class="nm">' + d.name + '</div>' +
-      '<div class="ct">' + d.cost + '</div>';
+      '<div class="ct">' + d.cost + '</div>' +
+      '<i class="tip" aria-hidden="true">i</i>';
     card.addEventListener('click', () => selectTower(key));
     shop.appendChild(card);
   }
@@ -31,10 +35,11 @@ export function buildShop() {
 /**
  * Picks the defence the next board tap will place.
  *
- * Selecting one puts nothing over the board — the card lights up and so do the
- * plots you can build on, which is all you need while you are choosing where
- * it goes. Tapping the card you already have selected is what opens its
- * details, and while those are open, tapping any card shows that one's.
+ * Selecting one puts nothing over the board — the card lights up, the plots
+ * you can build on flare, and a strip above the call row names the defence and
+ * says the card will explain itself if you tap it again. Tapping the card you
+ * already have selected is what opens those details, and while they are open,
+ * tapping any card shows that one's.
  */
 export function selectTower(key) {
   // The shop is dimmed behind a screen, but a stray tap must not get through
@@ -48,13 +53,12 @@ export function selectTower(key) {
   S.build = key;
   hideInspect();
 
+  // Restarts the flare across the plots, so a fresh pick is always announced
+  // on the board and not just in the shop.
+  if (!same) S.pickAt = clock();
+
   if (open && same) hidePreview();
   else if (open || same) showPreview(key);
-  else if (!S.towers.length) {
-    // Early in a run the lit plots need a word of explanation. It floats over
-    // the board and fades, so it is never something to dismiss.
-    say(W / 2, H * 0.5, 'tap a lit plot to place it', TOWERS[key].col, cell * 0.32);
-  }
 
   invalidateHud();
   hud();
@@ -63,6 +67,7 @@ export function selectTower(key) {
 /** Drops the selection and the details with it. */
 export function clearSelection() {
   S.build = null;
+  S.pickAt = -99;
   hidePreview();
   invalidateHud();
   hud();

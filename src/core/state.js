@@ -58,6 +58,8 @@ export function createRun() {
     // selection
     sel: null,
     build: null,
+    /** Clock reading when `build` was last picked, which times the plot flare. */
+    pickAt: -99,
     boss: null,
   };
 }

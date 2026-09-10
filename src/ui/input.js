@@ -28,6 +28,8 @@ function onBoardTap(ev) {
   // never also the tap that builds something you cannot see.
   if (isPreviewOpen()) {
     hidePreview();
+    // The placement strip stands down behind the sheet, so bring it back.
+    refresh();
     return;
   }
 

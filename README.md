@@ -93,10 +93,17 @@ a rail layout it moves into the empty column below the shop, and in short landsc
 board shifts left and the dock sits beside it — a sheet across a 243px board hides the
 whole game.
 
-Choosing a defence puts nothing over the board at all. The card lights up, every plot you
-could build on lights up with it, and that is the whole interface: the lower rows stay
-reachable. What a defence is *for* is a sheet you ask for — tap the card you already have
-selected — and any tap outside closes it again.
+Choosing a defence puts no sheet over the board at all. The card lights up, every plot you
+could build on flares in a wave that crosses the board and then settles to a slow breath,
+and a thin strip above the call-wave row names the defence and says the card will explain
+itself if you tap it again. A resting glow alone is easy to miss, and a player who cannot
+see where a defence goes will not place one. Pick something you cannot afford and the
+plots turn grey and the strip says how much focus is short, instead of letting you tap
+into a refusal. The strip takes no pointer events, so a plot behind it is still a plot you
+can tap.
+
+What a defence is *for* is a sheet you ask for — tap the card you already have selected,
+which is what the `i` badge on it means — and any tap outside closes it again.
 
 The shop is the one part of the layout that sits outside the board, so an overlay cannot
 cover it. While a screen is up, or a wave is being celebrated, `#app.screen` recedes it

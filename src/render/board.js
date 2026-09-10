@@ -145,28 +145,71 @@ export function drawSludge() {
   }
 }
 
-/** Buildable cells and the placement ghost, shown while a defence is selected. */
+/**
+ * How long the plot flare runs after a defence is picked, in seconds, and how
+ * far the sweep across the board lags behind itself.
+ */
+const FLARE_SECS = 1.15;
+const FLARE_SWEEP = 0.34;
+
+/**
+ * Buildable cells and the placement ghost, shown while a defence is selected.
+ *
+ * Picking a defence sets off a flare: every plot you can build on brightens
+ * and swells in a wave that crosses the board, then settles to a slow breath.
+ * A resting glow is easy to miss on a busy board, and a player who cannot see
+ * where a defence goes will not place one.
+ */
 export function drawPlots(ghost) {
   if (!S.build) return;
   const d = TOWERS[S.build];
+  // Nothing can be placed without the focus for it, so the plots say so in
+  // grey rather than inviting a tap that only earns a refusal.
+  const afford = S.focus >= d.cost;
+  const tint = afford ? d.col : '#8595b5';
+  const now = clock();
+  const age = now - S.pickAt;
+
   ctx.save();
   for (let c = 0; c < COLS; c++) {
+    const lead = age - (c / COLS) * FLARE_SWEEP;
+    // Eased so the flare snaps on and drains away rather than dimming flatly.
+    const flare = lead > 0 && lead < FLARE_SECS
+      ? Math.pow(1 - lead / FLARE_SECS, 1.6)
+      : 0;
     for (let r = 0; r < ROWS; r++) {
       if (isLane(c, r) || towerAt(c, r)) continue;
-      ctx.globalAlpha = 0.16 + Math.sin(clock() * 3 + c + r) * 0.05;
-      ctx.strokeStyle = d.col;
-      ctx.lineWidth = 1;
+      const breath = Math.sin(now * 3 + c + r) * 0.05;
+      const size = cell * (0.32 + flare * 0.05);
       ctx.save();
       ctx.translate((c + 0.5) * cell, (r + 0.5) * cell);
-      poly(ctx, 6, cell * 0.32, -1.5708);
+
+      ctx.globalAlpha = (afford ? 0.06 : 0.03) + flare * 0.26;
+      ctx.fillStyle = tint;
+      poly(ctx, 6, size, -1.5708);
+      ctx.fill();
+
+      ctx.globalAlpha = Math.min(1, (afford ? 0.3 : 0.18) + breath + flare * 0.65);
+      ctx.strokeStyle = tint;
+      ctx.lineWidth = 1 + flare * 1.6;
+      poly(ctx, 6, size, -1.5708);
       ctx.stroke();
+
+      // A ring thrown off each plot as the flare passes, so the eye catches
+      // the movement even where the board is already bright.
+      if (flare > 0.02) {
+        ctx.globalAlpha = flare * 0.45;
+        ctx.lineWidth = 1;
+        poly(ctx, 6, cell * (0.32 + (1 - flare) * 0.46), -1.5708);
+        ctx.stroke();
+      }
       ctx.restore();
     }
   }
   ctx.restore();
 
   if (!ghost) return;
-  const ok = canBuild(ghost.c, ghost.r);
+  const ok = canBuild(ghost.c, ghost.r) && afford;
   const x = (ghost.c + 0.5) * cell;
   const y = (ghost.r + 0.5) * cell;
   ctx.globalAlpha = 0.13;
