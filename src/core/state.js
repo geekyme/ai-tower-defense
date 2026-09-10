@@ -9,6 +9,7 @@ import { START_FOCUS, START_SANITY, BUILD_TIME } from './config.js';
 export let S = createRun();
 
 export function createRun() {
+  const now = Date.now();
   return {
     // resources
     focus: START_FOCUS,
@@ -22,7 +23,12 @@ export function createRun() {
     /** menu | brief | build | wave | paused | over | won */
     phase: 'menu',
     prev: null,
-    startedAt: Date.now(),
+    /**
+     * Identity of the run in the saved history. Survives a resume, so a run
+     * picked back up after a reload updates its row instead of adding one.
+     */
+    runId: now,
+    startedAt: now,
 
     // timers
     t: 0,

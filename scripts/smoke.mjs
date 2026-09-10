@@ -56,7 +56,7 @@ const { progress } = await import('../src/core/storage.js');
 const { stepFoes } = await import('../src/engine/foes.js');
 const { stepTowers, stepShots, placeTower, canBuild } = await import('../src/engine/towers.js');
 const { stepWave, nextBrief, beginBuildPhase, startWave } = await import('../src/engine/waves.js');
-const { takeCheckpoint, retryWave, clearCheckpoint } = await import('../src/engine/checkpoint.js');
+const { takeCheckpoint, retryWave, clearCheckpoint, resumeRun } = await import('../src/engine/checkpoint.js');
 const { START_FOCUS } = await import('../src/core/config.js');
 const { render } = await import('../src/render/scene.js');
 const { paintBackground } = await import('../src/render/board.js');
@@ -103,6 +103,47 @@ const early = [];
   S.phase = 'menu';
   S.focus = START_FOCUS;
   S.retries = 0;
+  S.towers.length = 0;
+}
+
+/*
+ * Leaving the page must not cost the run. What was written down has to come
+ * back as the same wave, board and focus — including past the campaign, where
+ * the only other way back into endless is clearing all twenty five again — and
+ * with the sanity the run was left on rather than a free top-up.
+ */
+{
+  S.wave = CAMPAIGN_WAVES + 3;
+  S.sanity = S.max - 5;
+
+  const [before, during] = plots();
+  placeTower(TOWER_KEYS[0], before.c, before.r);
+  S.focus = 320;
+  takeCheckpoint();
+  placeTower(TOWER_KEYS[0], during.c, during.r);
+
+  // As if the tab had gone: nothing left in memory, only the stored snapshot.
+  clearCheckpoint();
+  S.wave = 0;
+  S.endless = 0;
+  S.focus = START_FOCUS;
+  S.sanity = S.max;
+  S.towers.length = 0;
+
+  if (!resumeRun()) early.push('a run left behind could not be picked up again');
+  if (S.wave !== CAMPAIGN_WAVES + 3) early.push('a resume came back on wave ' + S.wave + ', not ' + (CAMPAIGN_WAVES + 3));
+  if (S.endless !== 3) early.push('a resume came back at endless ' + S.endless + ', not 3');
+  if (S.focus !== 320) early.push('a resume came back with ' + S.focus + ' focus, not the 320 the wave started with');
+  if (S.towers.length !== 1) early.push('a resume came back with ' + S.towers.length + ' defence(s), not the 1 standing when the wave started');
+  if (S.sanity !== S.max - 5) early.push('a resume handed back sanity the run had already spent');
+
+  clearCheckpoint();
+  S.wave = 0;
+  S.endless = 0;
+  S.phase = 'menu';
+  S.focus = START_FOCUS;
+  S.sanity = S.max;
+  S.towers.length = 0;
 }
 
 const targetWaves = Number(process.argv[2] || 8);

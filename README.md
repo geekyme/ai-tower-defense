@@ -17,6 +17,10 @@ Burning out costs you the wave rather than the run: every briefing leaves a chec
 behind, so a defeat offers the same wave again with the board and the focus you started
 it with, and your sanity back.
 
+That checkpoint is written down too, so **leaving the page does not cost you the run**.
+Open the playbook, reload, or lose the tab, and the menu offers the run back at the top
+of the wave it was on, with the board, the focus and the sanity you left it with.
+
 Past wave 25 it keeps going for as long as you can hold it. Endless waves are improvised
 from the campaign's threat pool with a boss every third one, and threat health keeps
 climbing — gently enough that how far you get is a question about your board rather than
@@ -145,8 +149,8 @@ node scripts/smoke.mjs 25
 Runs the whole 25-wave campaign headlessly: it stubs the DOM, plays the simulation at a
 fixed timestep with a scripted build order, draws every frame through a stub 2D context,
 renders all 37 threat artworks, and asserts that waves advance, that lessons unlock one
-per wave in order, and that retrying a wave hands back exactly the board and the focus it
-started with. Ask it for more waves than the campaign has — `node scripts/smoke.mjs 34` —
+per wave in order, and that retrying a wave — or picking up a stored run after the page
+has gone — hands back exactly the board and the focus it started with. Ask it for more waves than the campaign has — `node scripts/smoke.mjs 34` —
 and it plays on into the endless ones, which is how the generated waves stay tested. It catches the things that break when the data files are edited. Takes
 about five seconds and runs in CI before every deploy.
 
@@ -183,7 +187,7 @@ src/
     music.js          the soundtrack: a step sequencer, also without files
     bus.js            engine → UI events, so the engine imports no UI
   engine/             the simulation: spawn, damage, powers, foes, towers, waves
-    checkpoint.js     the start of the current wave, for retrying after a defeat
+    checkpoint.js     the start of the current wave: retry after a defeat, resume after a reload
   render/             canvas drawing: shapes, board, entities, fx, scene
   ui/                 DOM: hud, shop, panels, screens, input, toast, share card
   main.js             wiring and the game loop
@@ -265,6 +269,6 @@ and the playbook footer all render from it.
 ## Saved progress
 
 One localStorage key, `head-of-ai-defence:v1`: unlocked lessons, best wave, lifetime
-totals, the last 40 runs, and the sound preference. It never leaves the browser, and
+totals, the last 40 runs, the run in progress, and the sound preference. It never leaves the browser, and
 **Clear progress** at the bottom of the playbook wipes it. If storage is blocked, the
 game still runs — it just forgets everything when you close the tab.
