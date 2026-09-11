@@ -189,7 +189,7 @@ src/
     view.js           canvas sizing, the lane in pixels, resize handling
     storage.js        everything that survives a reload, in one localStorage key
     audio.js          the oscillator blip synth
-    music.js          the soundtrack: a step sequencer, also without files
+    music.js          the soundtrack: an EDM step sequencer, also without files
     bus.js            engine → UI events, so the engine imports no UI
   engine/             the simulation: spawn, damage, powers, foes, towers, waves
     checkpoint.js     the start of the current wave: retry after a defeat, resume after a reload
@@ -236,15 +236,18 @@ share sheet.
 Neither the effects nor the soundtrack load a file. `core/audio.js` is one oscillator per
 blip with a decaying gain envelope. `core/music.js` is a sixteenth-note sequencer that
 schedules its voices a fraction of a second ahead of the audio clock, over four bars of
-ii–V–I–vi in C voiced as rootless sevenths.
+i–VI–III–VII in A minor at 128 BPM.
 
-It is lo-fi mostly by subtraction: the whole mix runs through one lowpass at 2.1kHz so
-nothing is bright, the off sixteenths land late so nothing sits on the grid, and vinyl
-crackle runs underneath it all. Two moods, switched by the run's own events — `calm` is
-keys, bass and crackle for menus, briefings and the build phase; `combat` brings in a
-soft kick, a brushed snare and hats while a wave runs. Measured at the destination it
-sits around −37 dBFS between waves and −30 during one, with 85–90% of its energy below
-2kHz.
+It reads as dance music because of the groove and the gain staging. The kick lands on
+every beat, the bass rolls on the offbeats between them, the open hat answers it, and a
+supersaw (three sawtooths per note, spread either side of pitch) stabs across the top.
+Every kick pulls the melodic bus down for a fraction of a second and lets it back up,
+which is the sidechain pump the genre is built on. Two moods, switched by the run's own
+events: `calm` is the breakdown, a pad, a pluck arpeggio and a long bass with the master
+filter half closed at 1.5kHz, for menus, briefings and the build phase; `combat` is the
+drop, adding kick, claps, hats and stabs with the filter riding open to 7.2kHz as a wave
+starts. Measured at the destination it sits around −37 dBFS between waves and −28
+during one.
 
 Both share one AudioContext, created on the first tap because browsers keep a page silent
 until then, and one `♪` in the HUD switches both. A backgrounded tab stops the loop rather
