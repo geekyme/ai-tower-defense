@@ -2,68 +2,84 @@ import { audioContext, soundEnabled } from './audio.js';
 import { on } from './bus.js';
 
 /**
- * The soundtrack: lo-fi, and like the blip synth next door it plays no files.
- * A small step sequencer schedules the voices ahead of the audio clock, so the
- * loop never drifts and a backgrounded tab does not run away with it.
+ * The soundtrack: electronic, four-on-the-floor, and like the blip synth next
+ * door it plays no files. A small step sequencer schedules the voices ahead of
+ * the audio clock, so the loop never drifts and a backgrounded tab does not run
+ * away with it.
  *
- * What makes it lo-fi rather than chiptune is mostly what is taken away. The
- * whole mix goes through one gentle lowpass, so nothing is bright. The odd
- * sixteenths land late, so nothing is on the grid. Vinyl crackle runs
- * underneath the lot. The chords are lazy sevenths, the keys are soft, and the
- * drums sit well behind them.
+ * What makes it dance music rather than chiptune is mostly the groove and the
+ * gain staging. The kick lands on every beat, the bass rolls on the offbeats
+ * between them, the open hat answers it, and a detuned supersaw stabs across
+ * the top. Every kick ducks the melodic voices for a fraction of a second,
+ * which is the sidechain pump the whole genre is built on.
  *
  * Two moods, switched by the game's own events:
- *   calm    menus, briefings and the build phase — keys, bass, crackle
- *   combat  a wave is running — the drums come in and the bass walks
+ *   calm    menus, briefings and the build phase — the breakdown: pad, pluck
+ *           and a long bass, with the master filter half closed
+ *   combat  a wave is running — the drop: kick, rolling bass, claps, hats,
+ *           stabs, and the filter wide open
  *
  * There is one audio switch in the HUD, not two, so the soundtrack follows the
  * sound preference rather than keeping one of its own.
  */
 
-const BPM = 74;
+const BPM = 128;
 /** Seconds of music scheduled ahead of the audio clock. */
 const LOOKAHEAD = 0.3;
 /** How often the scheduler wakes up, in milliseconds. */
-const TICK = 70;
-const MASTER = 0.6;
+const TICK = 60;
+const MASTER = 0.48;
 const STEPS = 16;
-/** How late an off sixteenth lands, as a fraction of one. This is the swing. */
-const SWING = 0.19;
-/** Everything above this is rolled off, which is most of the character. */
-const TONE = 2100;
 
-/** Four bars of ii - V - I - vi in C, voiced as sevenths without their roots. */
+/** Four bars of i - VI - III - VII in A minor: the workhorse dance loop. */
 const PROG = [
-  { bass: 38, chord: [53, 57, 60, 64] },
-  { bass: 43, chord: [53, 57, 59, 62] },
-  { bass: 36, chord: [55, 59, 62, 64] },
-  { bass: 45, chord: [55, 57, 60, 64] },
+  { bass: 33, chord: [57, 60, 64, 67] },
+  { bass: 41, chord: [57, 60, 65, 69] },
+  { bass: 36, chord: [55, 60, 64, 67] },
+  { bass: 43, chord: [59, 62, 67, 71] },
 ];
 
+/**
+ * Sixteenths, counted from zero. Beats are 0, 4, 8, 12; the offbeat eighths
+ * that carry the bass and the open hat are 2, 6, 10, 14.
+ */
 const MOODS = {
   calm: {
-    gain: 0.72,
-    keys: [0, 10],
-    bass: [0, 6],
+    gain: 0.66,
+    // Half closed, so the breakdown sounds like the drop heard through a wall.
+    tone: 1500,
     kick: [],
-    snare: [],
+    clap: [],
     hats: false,
+    crash: false,
+    bass: [0, 8],
+    bassLong: true,
+    stab: [0],
+    arp: [0, 4, 6, 8, 12, 14],
   },
   combat: {
     gain: 1,
-    keys: [0, 6, 10],
-    bass: [0, 6, 8, 14],
-    kick: [0, 6, 10],
-    snare: [4, 12],
+    tone: 7200,
+    kick: [0, 4, 8, 12],
+    clap: [4, 12],
     hats: true,
+    crash: true,
+    bass: [2, 6, 10, 14],
+    bassLong: false,
+    stab: [2, 6, 10, 14],
+    arp: [0, 2, 4, 6, 8, 10, 12, 14],
   },
 };
+
+/** Which chord note the pluck picks on each eighth, so the arp walks up and back. */
+const ARP = [0, 2, 1, 3, 2, 0, 3, 1];
 
 let enabled = soundEnabled();
 let ctx = null;
 let bus = null;
+let voices = null;
+let tone = null;
 let noiseBuf = null;
-let crackle = null;
 let timer = 0;
 let nextTime = 0;
 let step = 0;
@@ -71,17 +87,16 @@ let mood = 'calm';
 
 const stepDur = () => 60 / BPM / 4;
 const hz = midi => 440 * Math.pow(2, (midi - 69) / 12);
-/** Off sixteenths drag behind the beat. Nothing here is quantised hard. */
-const swing = i => (i % 2 ? SWING * stepDur() : 0);
 
 /* ------------------------------------------------------------------ voices */
 
-/** One note: an oscillator with a soft attack, through the bus. */
-function note(t, freq, dur, type, peak, attack, cutoff) {
+/** One oscillator with a gain envelope, through the melodic (ducked) bus. */
+function note(t, freq, dur, type, peak, attack, cutoff, detune) {
   const osc = ctx.createOscillator();
   const g = ctx.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, t);
+  if (detune) osc.detune.setValueAtTime(detune, t);
   g.gain.setValueAtTime(0.0001, t);
   g.gain.exponentialRampToValueAtTime(peak, t + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
@@ -91,55 +106,71 @@ function note(t, freq, dur, type, peak, attack, cutoff) {
     f.type = 'lowpass';
     f.frequency.setValueAtTime(cutoff, t);
     g.connect(f);
-    f.connect(bus);
+    f.connect(voices);
   } else {
-    g.connect(bus);
+    g.connect(voices);
   }
   osc.start(t);
-  osc.stop(t + dur + 0.08);
+  osc.stop(t + dur + 0.06);
 }
 
 /**
- * The keys: a sine with a triangle an octave up under it, detuned a few cents
- * and spread across the chord, which is as close to a tired old Rhodes as two
- * oscillators get.
+ * A supersaw chord stab: three sawtooths per note, spread a few cents either
+ * side of pitch. The beating between them is the whole sound.
  */
-function keys(t, chord, dur, peak) {
+function stab(t, chord, dur, peak) {
   chord.forEach((n, i) => {
-    const at = t + i * 0.012;
-    note(at, hz(n), dur, 'sine', peak, 0.035, 1500);
-    note(at, hz(n + 12) * 1.002, dur * 0.7, 'triangle', peak * 0.35, 0.05, 1200);
+    for (const cents of [-11, 0, 11]) {
+      note(t + i * 0.004, hz(n), dur, 'sawtooth', peak, 0.006, 3800, cents);
+    }
   });
 }
 
-/** A slow swell under the keys, holding the bar together. */
+/** A pluck: one saw with a snap on the front and a filter that shuts behind it. */
+function pluck(t, freq, dur, peak) {
+  const osc = ctx.createOscillator();
+  const f = ctx.createBiquadFilter();
+  const g = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(freq, t);
+  f.type = 'lowpass';
+  f.Q.value = 6;
+  f.frequency.setValueAtTime(5200, t);
+  f.frequency.exponentialRampToValueAtTime(700, t + dur);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(f);
+  f.connect(g);
+  g.connect(voices);
+  osc.start(t);
+  osc.stop(t + dur + 0.05);
+}
+
+/** A slow saw swell under the chord, holding the bar together. */
 function pad(t, chord, dur, peak) {
   for (const n of chord) {
-    for (const cents of [-8, 8]) {
-      const osc = ctx.createOscillator();
-      const g = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(hz(n - 12), t);
-      osc.detune.setValueAtTime(cents, t);
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(peak, t + dur * 0.45);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      osc.connect(g);
-      g.connect(bus);
-      osc.start(t);
-      osc.stop(t + dur + 0.1);
+    for (const cents of [-9, 9]) {
+      note(t, hz(n - 12), dur, 'sawtooth', peak, dur * 0.4, 1300, cents);
     }
   }
 }
 
+/** The bass: a sine sub with a square over it, both well under the kick. */
+function bass(t, midi, dur, peak) {
+  note(t, hz(midi), dur, 'sine', peak, 0.01, 0);
+  note(t, hz(midi), dur * 0.8, 'square', peak * 0.34, 0.008, 340);
+}
+
 /** Filtered noise: every drum here that is not the kick. */
-function hiss(t, dur, peak, cutoff, type) {
+function hiss(t, dur, peak, cutoff, type, q) {
   const src = ctx.createBufferSource();
   const f = ctx.createBiquadFilter();
   const g = ctx.createGain();
   src.buffer = noiseBuf;
   f.type = type || 'highpass';
   f.frequency.setValueAtTime(cutoff, t);
+  if (q) f.Q.value = q;
   g.gain.setValueAtTime(peak, t);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   src.connect(f);
@@ -149,56 +180,48 @@ function hiss(t, dur, peak, cutoff, type) {
   src.stop(t + dur + 0.02);
 }
 
-/** Soft and round, with none of the click of a dance kick. */
+/**
+ * The kick, straight to the bus so it never ducks itself: a fast pitch drop
+ * with a click of noise on the transient.
+ */
 function kick(t) {
   const osc = ctx.createOscillator();
   const g = ctx.createGain();
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(105, t);
-  osc.frequency.exponentialRampToValueAtTime(46, t + 0.13);
-  g.gain.setValueAtTime(0.44, t);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+  osc.frequency.setValueAtTime(150, t);
+  osc.frequency.exponentialRampToValueAtTime(45, t + 0.08);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.62, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.24);
   osc.connect(g);
   g.connect(bus);
   osc.start(t);
-  osc.stop(t + 0.3);
+  osc.stop(t + 0.28);
+  hiss(t, 0.02, 0.05, 2600);
+  duck(t);
 }
 
-/** Brushed snare: noise with a little body under it, mixed well back. */
-function snare(t) {
-  hiss(t, 0.19, 0.1, 1100, 'bandpass');
-  note(t, 185, 0.1, 'triangle', 0.05, 0.004, 900);
+/** A clap: three noise bursts a few milliseconds apart, then the tail. */
+function clap(t) {
+  for (const at of [0, 0.011, 0.022]) hiss(t + at, 0.035, 0.075, 1500, 'bandpass', 1.1);
+  hiss(t + 0.03, 0.14, 0.045, 1300, 'bandpass', 0.8);
+}
+
+/** A crash, opening the four-bar cycle. */
+function crash(t) {
+  hiss(t, 1.1, 0.06, 5200);
 }
 
 /**
- * Vinyl crackle, looping under everything for as long as the music plays.
- * A few seconds of mostly silence with pops scattered through it: the one
- * sound here that is doing nothing but saying lo-fi.
+ * The sidechain. Every kick pulls the melodic bus down and lets it back up
+ * before the next eighth, which is what makes the loop breathe.
  */
-function startCrackle() {
-  const seconds = 4;
-  const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.03;
-  for (let n = 0; n < seconds * 18; n++) {
-    const at = Math.floor(Math.random() * (data.length - 40));
-    const amp = 0.2 + Math.random() * 0.5;
-    for (let i = 0; i < 30; i++) data[at + i] += (Math.random() * 2 - 1) * amp * (1 - i / 30);
-  }
-
-  const src = ctx.createBufferSource();
-  const hp = ctx.createBiquadFilter();
-  const g = ctx.createGain();
-  src.buffer = buf;
-  src.loop = true;
-  hp.type = 'highpass';
-  hp.frequency.value = 1200;
-  g.gain.value = 0.15;
-  src.connect(hp);
-  hp.connect(g);
-  g.connect(bus);
-  src.start();
-  return src;
+function duck(t) {
+  const g = voices.gain;
+  g.cancelScheduledValues(t);
+  g.setValueAtTime(1, t);
+  g.linearRampToValueAtTime(0.42, t + 0.02);
+  g.linearRampToValueAtTime(1, t + stepDur() * 1.7);
 }
 
 /* --------------------------------------------------------------- sequencer */
@@ -206,19 +229,31 @@ function startCrackle() {
 /** Everything that happens on one sixteenth, scheduled at audio time `t`. */
 function playStep(i, t) {
   const m = MOODS[mood];
-  const bar = PROG[Math.floor(i / STEPS) % PROG.length];
+  const barIndex = Math.floor(i / STEPS) % PROG.length;
+  const bar = PROG[barIndex];
   const s = i % STEPS;
 
-  if (s === 0) pad(t, bar.chord, stepDur() * STEPS, 0.032);
-  if (m.keys.includes(s)) keys(t, bar.chord, s === 0 ? 1.5 : 0.9, s === 0 ? 0.06 : 0.038);
-  if (m.bass.includes(s)) {
-    // The root on the downbeat, the fifth off the beat: a lazy walk.
-    const root = bar.bass + (s === 0 ? 0 : 7);
-    note(t, hz(root), s === 0 ? 0.85 : 0.4, 'sine', s === 0 ? 0.19 : 0.11, 0.02, 400);
+  if (s === 0) {
+    pad(t, bar.chord, stepDur() * STEPS, 0.026);
+    if (m.crash && barIndex === 0) crash(t);
   }
   if (m.kick.includes(s)) kick(t);
-  if (m.snare.includes(s)) snare(t);
-  if (m.hats && s % 2 === 0) hiss(t, 0.045, s % 4 === 0 ? 0.035 : 0.022, 6800);
+  if (m.clap.includes(s)) clap(t);
+  if (m.hats) {
+    // Closed hats on the offbeat sixteenths, the open hat on the eighths.
+    if (s % 2 === 1) hiss(t, 0.035, 0.026, 7600);
+    if (s % 4 === 2) hiss(t, 0.12, 0.032, 6400);
+  }
+  if (m.bass.includes(s)) {
+    // The root, with the octave on the last offbeat so the roll goes somewhere.
+    const root = bar.bass + (s === 14 ? 12 : 0);
+    bass(t, root, m.bassLong ? stepDur() * 7 : stepDur() * 1.5, m.bassLong ? 0.2 : 0.26);
+  }
+  if (m.stab.includes(s)) stab(t, bar.chord, stepDur() * 1.3, 0.026);
+  if (m.arp.includes(s)) {
+    const n = bar.chord[ARP[(i / 2 | 0) % ARP.length]] + 12;
+    pluck(t, hz(n), stepDur() * 1.6, mood === 'calm' ? 0.05 : 0.038);
+  }
 }
 
 function pump() {
@@ -230,7 +265,7 @@ function pump() {
   const bars = STEPS * PROG.length;
   while (nextTime < ctx.currentTime + LOOKAHEAD) {
     if (nextTime < ctx.currentTime) nextTime = ctx.currentTime + 0.05;
-    playStep(step, nextTime + swing(step));
+    playStep(step, nextTime);
     nextTime += stepDur();
     step = (step + 1) % bars;
   }
@@ -238,19 +273,25 @@ function pump() {
 
 /* ------------------------------------------------------------------ public */
 
-/** The bus, and the lowpass that keeps the whole thing behind a closed door. */
+/**
+ * The bus, the ducked sub-bus the melodic voices share, and the master filter
+ * that opens for the drop and half closes for the breakdown.
+ */
 function buildChain() {
   if (bus) return;
-  const tone = ctx.createBiquadFilter();
+  tone = ctx.createBiquadFilter();
   tone.type = 'lowpass';
-  tone.frequency.value = TONE;
-  tone.Q.value = 0.4;
+  tone.frequency.value = MOODS[mood].tone;
+  tone.Q.value = 0.6;
   bus = ctx.createGain();
   bus.gain.value = 0;
+  voices = ctx.createGain();
+  voices.gain.value = 1;
+  voices.connect(bus);
   bus.connect(tone);
   tone.connect(ctx.destination);
 
-  noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.4), ctx.sampleRate);
+  noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 1.2), ctx.sampleRate);
   const d = noiseBuf.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 }
@@ -266,12 +307,13 @@ function startMusic() {
   if (!ctx) return;
   if (ctx.state === 'suspended') ctx.resume();
   buildChain();
-  if (!crackle) crackle = startCrackle();
 
   bus.gain.cancelScheduledValues(ctx.currentTime);
   bus.gain.setValueAtTime(Math.max(0.0001, bus.gain.value), ctx.currentTime);
-  bus.gain.linearRampToValueAtTime(MASTER * MOODS[mood].gain, ctx.currentTime + 1.8);
+  bus.gain.linearRampToValueAtTime(MASTER * MOODS[mood].gain, ctx.currentTime + 1.2);
   nextTime = ctx.currentTime + 0.08;
+  // Always come in on a downbeat, so the first thing heard is the beat.
+  step = 0;
   timer = setInterval(pump, TICK);
   pump();
 }
@@ -296,14 +338,22 @@ function setEnabled(value) {
   else stopMusic(0.35);
 }
 
-/** 'calm' between waves, 'combat' during one. Crossfades the level. */
+/**
+ * 'calm' between waves, 'combat' during one. The level and the master filter
+ * both ride across, so a wave starting sounds like the filter opening up.
+ */
 function setMood(next) {
   if (!MOODS[next] || next === mood) return;
   mood = next;
   if (!ctx || !bus || !timer) return;
-  bus.gain.cancelScheduledValues(ctx.currentTime);
-  bus.gain.setValueAtTime(Math.max(0.0001, bus.gain.value), ctx.currentTime);
-  bus.gain.linearRampToValueAtTime(MASTER * MOODS[mood].gain, ctx.currentTime + 1.6);
+  const now = ctx.currentTime;
+  const ramp = next === 'combat' ? 0.7 : 1.4;
+  bus.gain.cancelScheduledValues(now);
+  bus.gain.setValueAtTime(Math.max(0.0001, bus.gain.value), now);
+  bus.gain.linearRampToValueAtTime(MASTER * MOODS[mood].gain, now + ramp);
+  tone.frequency.cancelScheduledValues(now);
+  tone.frequency.setValueAtTime(tone.frequency.value, now);
+  tone.frequency.exponentialRampToValueAtTime(MOODS[mood].tone, now + ramp);
 }
 
 /** Wires the soundtrack to the run's events. Call once at start-up. */
