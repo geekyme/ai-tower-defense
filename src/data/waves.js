@@ -48,7 +48,7 @@ export const WAVES=[
  {e:3,t:'The pager is yours now',g:[['oncall',22,.55],['redteam',22,.45,2],['gpu',11,1.15,1],['pii',13,.6,10]]},
  {e:3,t:'Nobody will retire version one',g:[['legacyai',11,1.3],['months',20,.55,2],['swamp',10,1.2,4],['silent',16,.7,11]]},
  {e:3,t:'Your best two people resigned',g:[['attrition',16,.8],['vendor',9,1.4,2],['sprawl',10,1.2,1],['redteam',20,.5,9]]},
- {e:3,t:'AI is now everybody\u2019s job',g:[['reorg',1,1],['attrition',6,2.2,5],['ctx',22,.24,3],['oncall',7,1.4,11],['months',10,.9,17]]},
+ {e:3,t:'AI is now everybody\u2019s job',g:[['reorg',1,1],['attrition',4,3.0,5],['ctx',22,.24,3],['oncall',7,1.4,11],['months',10,.9,17]]},
  {e:4,t:'The bill compounds',g:[['inferbill',12,.95],['energy',8,1.6,2],['token',18,.55,1],['ctx',24,.2,9]]},
  {e:4,t:'It demoed beautifully in January',g:[['demo',12,1.05],['months',18,.65,3],['aiwash',12,.9,1],['drift',14,.7,11]]},
  {e:4,t:'Trust is the product now',g:[['trust',12,1.05],['pii',16,.55,2],['redteam',14,.65,4],['silent',14,.8,12]]},

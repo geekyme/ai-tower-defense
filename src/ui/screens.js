@@ -8,7 +8,7 @@ import { sfx } from '../core/audio.js';
 import { progress, recordSession, unlockedCount, clearSavedRun } from '../core/storage.js';
 import { scale } from '../engine/spawn.js';
 import { startWave, nextBrief, beginBuildPhase } from '../engine/waves.js';
-import { hasCheckpoint, retryWave, clearCheckpoint, resumableRun, resumeRun,
+import { hasCheckpoint, retryWave, retrySanityValue, clearCheckpoint, resumableRun, resumeRun,
   saveEndlessEntry } from '../engine/checkpoint.js';
 import { threatThumbnail } from '../render/shapes.js';
 import { el, refs, esc } from './dom.js';
@@ -252,17 +252,37 @@ export function menu() {
 /* ------------------------------------------------------------------ pause */
 
 export function pauseScreen() {
+  // A wave going badly should never leave the run as the only thing you can
+  // restart. The checkpoint for this wave is already sitting there, so the
+  // same rewind the defeat screen offers is offered here, before the defeat.
+  const canRestart = hasCheckpoint();
+  const restart = canRestart
+    ? '<button class="ghost" id="redo" type="button">Restart wave ' + S.wave + '</button>' +
+      '<p class="lore">Back to the top of this wave with the defences, the focus and the ' +
+      retrySanityValue() + ' sanity you started it with. Everything on the lane goes away.</p>'
+    : '';
+
   openOverlay(
     '<h1 class="sm">Paused</h1>' +
     '<p class="kick">Nothing is on fire while you are here.</p>' +
     '<button id="res" type="button">Back in</button>' +
     '<a class="btn ghost" href="lessons.html">Open the playbook</a>' +
-    '<button class="ghost" id="quit" type="button">Restart</button>');
+    restart +
+    '<button class="ghost" id="quit" type="button">Abandon the run</button>');
 
   el('res').onclick = () => {
     closeOverlay();
     S.phase = S.prev || 'build';
   };
+  if (canRestart) {
+    el('redo').onclick = () => {
+      closeOverlay();
+      refs.callRow.classList.add('hidden');
+      if (!retryWave()) menu();
+      invalidateHud();
+      hud();
+    };
+  }
   el('quit').onclick = () => {
     closeOverlay();
     endSession('abandoned');
@@ -340,8 +360,8 @@ export function defeat() {
   // this wave's briefing ended, with the focus and the board you had then.
   const canRetry = hasCheckpoint();
   const retry = canRetry
-    ? '<p class="lore">Go again from the top of this wave: the defences and the focus you' +
-      ' started it with, and your sanity back to ' + S.max + '. Build it differently.</p>' +
+    ? '<p class="lore">Go again from the top of this wave: the defences, the focus and the ' +
+      retrySanityValue() + ' sanity you started it with. Build it differently.</p>' +
       '<button id="retry" type="button">Try wave ' + S.wave + ' again</button>'
     : '';
 

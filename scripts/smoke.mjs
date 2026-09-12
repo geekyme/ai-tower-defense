@@ -56,6 +56,7 @@ const { progress } = await import('../src/core/storage.js');
 const { stepFoes } = await import('../src/engine/foes.js');
 const { stepTowers, stepShots, placeTower, canBuild, upgradeTower } = await import('../src/engine/towers.js');
 const { stepWave, nextBrief, beginBuildPhase, startWave } = await import('../src/engine/waves.js');
+const { spawn } = await import('../src/engine/spawn.js');
 const { takeCheckpoint, retryWave, clearCheckpoint, resumeRun } = await import('../src/engine/checkpoint.js');
 const { START_FOCUS } = await import('../src/core/config.js');
 const { render } = await import('../src/render/scene.js');
@@ -76,11 +77,16 @@ for (const key of Object.keys(THREATS)) threatThumbnail(key, 32);
  * A defeat costs the wave, not the run. Retrying has to hand back exactly the
  * board and the focus the wave started with, before any listeners are wired
  * up so the briefing it asks for goes nowhere.
+ *
+ * The wave is entered damaged on purpose. A retry hands back the sanity you
+ * walked in with, not a full bar: handing back the maximum made losing on
+ * purpose the cheapest way to heal, and this is the assertion that says so.
  */
 const early = [];
 {
   S.wave = 4;
   S.focus = 500;
+  S.sanity = S.max - 4;
   takeCheckpoint();
 
   const spot = plots()[0];
@@ -92,9 +98,41 @@ const early = [];
   if (S.wave !== 4) early.push('a retry left the run on wave ' + S.wave + ', not 4');
   if (S.focus !== 500) early.push('a retry left ' + S.focus + ' focus, not the 500 the wave started with');
   if (S.towers.length !== 0) early.push('a retry kept ' + S.towers.length + ' defence(s) built during the failed attempt');
-  if (S.sanity !== S.max) early.push('a retry left sanity at ' + S.sanity + ', not ' + S.max);
+  if (S.sanity !== S.max - 4) {
+    early.push('a retry left sanity at ' + S.sanity + ', not the ' + (S.max - 4) +
+      ' the wave was entered on');
+  }
   if (S.killed !== 0) early.push('a retry kept the failed attempt\'s kill count');
   if (S.retries !== 1) early.push('a retry was not counted');
+
+  // A retry can never leave you better off than the attempt it replays, at any
+  // sanity. That is the whole rule, so it is checked across the range.
+  for (const entered of [1, 5, S.max]) {
+    S.sanity = entered;
+    takeCheckpoint();
+    S.sanity = 0;
+    retryWave();
+    if (S.sanity !== entered) {
+      early.push('a retry of a wave entered on ' + entered + ' sanity handed back ' + S.sanity);
+    }
+  }
+
+  // The same rewind has to work from the middle of a live wave, which is what
+  // the pause screen offers: a bad wave is restartable before it is lost.
+  S.sanity = 9;
+  S.focus = 700;
+  takeCheckpoint();
+  startWave();
+  spawn('hallu', 0);
+  spawn('ctx', 0);
+  placeTower(TOWER_KEYS[0], plots()[0].c, plots()[0].r);
+  S.focus -= 40;
+  if (!retryWave()) early.push('a wave could not be restarted from the middle of itself');
+  if (S.foes.length) early.push('restarting mid-wave left ' + S.foes.length + ' threat(s) on the lane');
+  if (S.queue.length) early.push('restarting mid-wave left ' + S.queue.length + ' threat(s) queued');
+  if (S.sanity !== 9) early.push('restarting mid-wave left sanity at ' + S.sanity + ', not 9');
+  if (S.focus !== 700) early.push('restarting mid-wave left ' + S.focus + ' focus, not 700');
+  if (S.towers.length) early.push('restarting mid-wave kept a defence built during the attempt');
 
   // Back to a fresh run by hand: `S` was destructured out of the module above,
   // so it is a copy of the binding and `newRun()` would leave it behind.
@@ -102,6 +140,7 @@ const early = [];
   S.wave = 0;
   S.phase = 'menu';
   S.focus = START_FOCUS;
+  S.sanity = S.max;
   S.retries = 0;
   S.towers.length = 0;
 }

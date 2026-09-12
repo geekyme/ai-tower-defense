@@ -28,6 +28,17 @@ const CLEAR_PER_WAVE = 5;
 const CLEAN_BASE = 30;
 const CLEAN_PER_WAVE = 6;
 
+/**
+ * Sanity handed back for a wave nothing got through.
+ *
+ * Sanity has to be recoverable by something, or a run that takes two bad waves
+ * early is already over and spends twenty more waves finding out. Losing used
+ * to be that something, which made dying on purpose the best move available.
+ * This is the same relief attached to the opposite result: hold a wave clean
+ * and you claw one back, up to the maximum you started with.
+ */
+const CLEAN_SANITY = 1;
+
 const CONFETTI = ['#6ee7a0', '#35e6d5', '#a379ff', '#ffc24b', '#eafff4'];
 
 /** Flattens a wave's spawn groups into a time-ordered spawn queue. */
@@ -62,6 +73,9 @@ function waveCleared() {
   const bonus = clean ? CLEAN_BASE + S.wave * CLEAN_PER_WAVE : 0;
   const reward = base + bonus;
   S.focus += reward;
+
+  const mended = clean ? Math.min(CLEAN_SANITY, S.max - S.sanity) : 0;
+  S.sanity += mended;
   S.best = Math.max(S.best, S.wave);
   recordBestWave(S.wave);
 
@@ -71,6 +85,7 @@ function waveCleared() {
 
   const lines = [{ t: '+' + base + ' focus banked', c: '#35e6d5' }];
   if (bonus) lines.push({ t: '+' + bonus + ' nothing got past you', c: '#6ee7a0' });
+  if (mended) lines.push({ t: '+' + mended + ' sanity recovered', c: '#6ee7a0' });
   if (S.sanity === S.max) lines.push({ t: 'not a scratch on you', c: '#6ee7a0' });
   if (isNew) lines.push({ t: 'lesson unlocked · ' + lesson.title, c: '#a379ff' });
 
@@ -81,7 +96,7 @@ function waveCleared() {
   flash('#6ee7a0', 0.45);
   sfx.clear();
 
-  emit('wave:cleared', { wave: S.wave, reward, clean, lesson: isNew ? lesson : null });
+  emit('wave:cleared', { wave: S.wave, reward, clean, mended, lesson: isNew ? lesson : null });
 
   // Hold here so the celebration is seen, rather than being buried under the
   // next briefing a frame later.

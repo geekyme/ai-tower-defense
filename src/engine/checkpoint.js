@@ -9,16 +9,38 @@ import { reviveTower } from './towers.js';
  * than the whole run, and so leaving the page does not cost you the run.
  *
  * Taken when the build phase opens, which is before you have spent anything on
- * this wave: retrying hands back the focus and the board you had when the wave
- * was still ahead of you, and full sanity, because a retry is a fresh go at
- * the wave rather than a continuation of the run that just ended.
+ * this wave: retrying hands back the focus, the board and the sanity you had
+ * when the wave was still ahead of you.
  *
  * The same snapshot goes to storage, where it outlives the page. Resuming from
- * there is the same rewind with the sanity you actually had, so that walking
- * out and back in is not a way to heal.
+ * there is the same rewind, so that walking out and back in is not a way to
+ * heal — and neither is losing on purpose.
  */
 
 let saved = null;
+
+/**
+ * Sanity a retry hands back: exactly what you walked into the wave with.
+ *
+ * It used to hand back a full bar, which sounds generous and quietly wasn't —
+ * it meant the sanity carried between waves was never really spent, because
+ * any wave could be entered at full health by losing it once on purpose first.
+ * Two people played two different games depending on whether they had noticed.
+ *
+ * A retry is a second go at the wave on the terms you reached it with, so it
+ * can never leave you better off than the attempt you are replaying. What it
+ * costs is the time to play the wave again, which is the only price a retry
+ * should have. Reaching a wave too damaged to clear it is then a run that is
+ * genuinely over, and clearing waves clean is what walks it back.
+ */
+function retrySanity(s) {
+  return Math.min(s.sanity, s.max);
+}
+
+/** What the defeat and pause screens promise, so copy cannot drift from code. */
+export function retrySanityValue() {
+  return saved ? retrySanity(saved) : 0;
+}
 
 function snapshot(wave) {
   return {
@@ -112,7 +134,7 @@ function rewind(s, sanity, retries) {
  */
 export function retryWave() {
   if (!saved) return false;
-  rewind(saved, saved.max, saved.retries + 1);
+  rewind(saved, retrySanity(saved), saved.retries + 1);
   return true;
 }
 
@@ -123,6 +145,9 @@ export function retryWave() {
 export function resumeRun() {
   const s = resumableRun();
   if (!s) return false;
+  // A checkpoint is only ever taken at the top of a wave, which cannot happen
+  // on zero sanity, so a stored zero is damaged data rather than a state the
+  // run can be in. Hand back the maximum rather than an unplayable wave.
   const sanity = s.sanity > 0 ? Math.min(s.sanity, s.max) : s.max;
   rewind(s, sanity, s.retries || 0);
   return true;
