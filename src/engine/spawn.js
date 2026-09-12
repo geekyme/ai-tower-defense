@@ -1,5 +1,5 @@
 import { THREATS, MIMIC_POOL } from '../data/threats.js';
-import { WAVE_HP_SCALE, ENDLESS_HP_SCALE } from '../core/config.js';
+import { WAVE_HP_SCALE, WAVE_HP_ACCEL, ENDLESS_HP_SCALE, BOUNTY_RATE } from '../core/config.js';
 import { S } from '../core/state.js';
 import { cell, at } from '../core/view.js';
 import { sfx } from '../core/audio.js';
@@ -7,7 +7,8 @@ import { flash, shake } from './effects.js';
 
 /** Health multiplier for the current wave. Bosses use a gentler curve. */
 export function scale() {
-  return 1 + (S.wave - 1) * WAVE_HP_SCALE + S.endless * ENDLESS_HP_SCALE;
+  const w = S.wave - 1;
+  return 1 + w * WAVE_HP_SCALE + w * w * WAVE_HP_ACCEL + S.endless * ENDLESS_HP_SCALE;
 }
 
 /**
@@ -26,7 +27,7 @@ export function spawn(key, d) {
     max: D.hp * mult,
     d: d || 0,
     spd: D.spd * cell,
-    b: Math.round(D.b * (1 + S.endless * 0.2)),
+    b: Math.max(1, Math.round(D.b * BOUNTY_RATE * (1 + S.endless * 0.2))),
 
     // status
     slowT: 0, slowA: 0, stunT: 0, revT: 0, acc: 0,

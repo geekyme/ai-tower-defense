@@ -54,7 +54,7 @@ const { CAMPAIGN_WAVES } = await import('../src/data/waves.js');
 const { COLS, ROWS, pathKeys } = await import('../src/core/config.js');
 const { progress } = await import('../src/core/storage.js');
 const { stepFoes } = await import('../src/engine/foes.js');
-const { stepTowers, stepShots, placeTower, canBuild } = await import('../src/engine/towers.js');
+const { stepTowers, stepShots, placeTower, canBuild, upgradeTower } = await import('../src/engine/towers.js');
 const { stepWave, nextBrief, beginBuildPhase, startWave } = await import('../src/engine/waves.js');
 const { takeCheckpoint, retryWave, clearCheckpoint, resumeRun } = await import('../src/engine/checkpoint.js');
 const { START_FOCUS } = await import('../src/core/config.js');
@@ -190,9 +190,16 @@ function plots() {
 function spendFocus() {
   const CAP = 30;
   for (const { c, r } of plots()) {
-    if (S.towers.length >= CAP) return;
+    if (S.towers.length >= CAP) break;
     const key = TOWER_KEYS[(S.wave + c + r) % TOWER_KEYS.length];
-    if (!placeTower(key, c, r)) return; // out of focus
+    if (!placeTower(key, c, r)) break; // out of focus
+  }
+  // Levels, not just plots. A board of thirty level-one defences stops being
+  // able to clear a wave long before the campaign ends, and this harness has
+  // to reach the endless waves to test that they generate.
+  for (let again = true; again;) {
+    again = false;
+    for (const t of S.towers) if (upgradeTower(t)) { again = true; break; }
   }
 }
 
