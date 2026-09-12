@@ -20,10 +20,15 @@ Twenty five waves, twenty five lessons, and the full list once you finish the ca
 
 Burning out costs you the wave rather than the run: every briefing leaves a checkpoint
 behind, so a defeat offers the same wave again with the board, the focus and the sanity
-you started it with. Not a full bar — a retry that healed you completely made losing on
-purpose the cheapest way to top up, so the sanity carried between waves was never really
-spent. There is a floor at half your maximum so a retry is never unplayable, and holding
-a wave clean is what actually earns sanity back.
+you started it with. Exactly that, not a full bar — a retry that healed you completely
+made losing on purpose the cheapest way to top up, and then the sanity carried between
+waves was never really spent. A retry cannot leave you better off than the attempt it
+replays; holding a wave clean is what earns sanity back.
+
+**You do not have to lose the wave to restart it.** Pause at any point, in the build
+phase or halfway through a wave going badly, and *Restart wave* is the same rewind the
+defeat screen offers, before the defeat. Abandoning the whole run is a separate button
+underneath it, and it is the only one that throws anything away.
 
 That checkpoint is written down too, so **leaving the page does not cost you the run**.
 Open the playbook, reload, or lose the tab, and the menu offers the run back at the top
