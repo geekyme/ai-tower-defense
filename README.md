@@ -31,6 +31,22 @@ from the campaign's threat pool with a boss every third one, and threat health k
 climbing — gently enough that how far you get is a question about your board rather than
 a wall a few waves after the campaign ends.
 
+## How it ramps
+
+Waves get harder two ways, and mostly the first one. **Volume** is the lever: wave one is
+a dozen threats and the finale is seventy on top of a boss, so most waves put forty to
+sixty on the lane and the board is busy from era two onwards. **Health** is the second,
+and it is a curve rather than a line — `1 + (w-1)·0.055 + (w-1)²·0.0028` — so the squared
+term is almost nothing before wave ten and most of the multiplier by wave twenty five.
+Era one is a crowd you can out-build; era five is one you cannot.
+
+Both of those are read against two fixed budgets, which is what keeps it survivable.
+Sanity is the leak budget: you get 26, so a wave can drop threats on you without ending
+the run, and the sanity a wave costs is what the difficulty actually is. Focus is the
+build budget, and a kill pays `BOUNTY_RATE` of a threat's listed bounty — set below one
+precisely because volume went up, so a wave's income stays close to what one plot and one
+upgrade cost instead of buying the whole board twice over.
+
 No build step, no dependencies, no server — static files and ES modules.
 
 ## Running it locally
@@ -159,6 +175,20 @@ has gone — hands back exactly the board and the focus it started with. Ask it 
 and it plays on into the endless ones, which is how the generated waves stay tested. It catches the things that break when the data files are edited. Takes
 about five seconds and runs in CI before every deploy.
 
+```bash
+node scripts/balance.mjs 25 200
+```
+
+The other half of the question: not whether a wave runs, but how it plays. `smoke.mjs`
+hands itself focus and sanity every briefing so every wave's data gets exercised, which
+makes its numbers meaningless as balance. This one plays the real economy and prints a
+row per wave — how long it took, what it cost in sanity, the focus banked either side,
+and the board that held it. The second argument is extra focus per wave, standing in for
+the skill its bot does not have: at `0` it plays like a first run and dies around wave
+fifteen, and from `100` up it holds the campaign. Run it before and after a change to
+`waves.js`, `threats.js`, `towers.js` or the constants in `config.js` and read the two
+tables side by side.
+
 ## Project structure
 
 ```
@@ -198,6 +228,7 @@ src/
   main.js             wiring and the game loop
 scripts/
   smoke.mjs           headless campaign test
+  balance.mjs         headless difficulty probe: what each wave costs to hold
   stamp-modules.mjs   versions module URLs at deploy time (CI only)
   og-card.html        source art for the two social cards
   render-og.mjs       renders the cards and the PNG icons (optional, dev only)
