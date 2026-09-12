@@ -7,6 +7,17 @@ import { POWERS, touchTowers } from './powers.js';
 import { say, flash, shake, pulse } from './effects.js';
 
 const MAX_SLUDGE = 26;
+/**
+ * How many defences one threat can take down with it on its walk.
+ *
+ * See `touchTowers`: uncapped, these scale with the length of the lane rather
+ * than with the count in the wave, and a wave carrying twenty of them is not
+ * harder, it is unplayable — twenty pagers walking the board end to end leave
+ * every defence stunned for the whole wave, and no board answers that because
+ * no board is firing. Attrition is lowest because what it takes does not come
+ * back when the threat dies.
+ */
+const TAKES = { attrition: 2, sunset: 4, hijack: 4, page: 5 };
 
 /** Per-threat behaviour that fires every frame, before movement. */
 function tickBehaviour(f, D, dt) {
@@ -66,29 +77,31 @@ function tickBehaviour(f, D, dt) {
 
   // Threats that attack defences by walking past them.
   if (D.sunset) {
-    touchTowers(f, 1.3, t => {
+    touchTowers(f, 1.3, TAKES.sunset, t => {
       t.stunT = Math.max(t.stunT, 5);
       t.kind = 'sunset';
       say(t.x, t.y - cell * 0.5, 'sunset', '#ff7a3c', cell * 0.26);
     });
   }
   if (D.hijack) {
-    touchTowers(f, 1.2, t => {
+    touchTowers(f, 1.2, TAKES.hijack, t => {
       t.stunT = Math.max(t.stunT, 4);
       t.kind = 'hijack';
       say(t.x, t.y - cell * 0.5, 'injected', '#ff4d7a', cell * 0.26);
     });
   }
   if (D.page) {
-    touchTowers(f, 1.2, t => {
+    touchTowers(f, 1.2, TAKES.page, t => {
       t.stunT = Math.max(t.stunT, 2.5);
       t.kind = 'paged';
       say(t.x, t.y - cell * 0.5, 'paged', '#ff9f43', cell * 0.26);
     });
   }
   if (D.attrition) {
-    touchTowers(f, 1.3, t => {
-      if (t.lv <= 1) return;
+    // A defence already at base level costs the threat nothing: returning
+    // false keeps its budget for one it can actually take a level from.
+    touchTowers(f, 1.3, TAKES.attrition, t => {
+      if (t.lv <= 1) return false;
       t.lv--;
       say(t.x, t.y - cell * 0.5, 'they left', '#ffd0a0', cell * 0.26);
       pulse(t.x, t.y, cell * 0.9, '#ffd0a0', 0.5);

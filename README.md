@@ -33,19 +33,36 @@ a wall a few waves after the campaign ends.
 
 ## How it ramps
 
-Waves get harder two ways, and mostly the first one. **Volume** is the lever: wave one is
-a dozen threats and the finale is seventy on top of a boss, so most waves put forty to
-sixty on the lane and the board is busy from era two onwards. **Health** is the second,
-and it is a curve rather than a line — `1 + (w-1)·0.055 + (w-1)²·0.0028` — so the squared
-term is almost nothing before wave ten and most of the multiplier by wave twenty five.
-Era one is a crowd you can out-build; era five is one you cannot.
+**Volume is not difficulty.** It is the first thing you reach for and it barely works: a
+threat pays a bounty when it dies, so a bigger wave part-funds the board that answers it,
+and past the middle of the campaign the board runs out of plots rather than money. Doubling
+a wave's size mostly makes it longer. Waves are large — a dozen on wave one, forty to
+eighty from era two, seventy plus a boss in the finale — because a full lane is the point,
+not because it is what makes the game hard.
 
-Both of those are read against two fixed budgets, which is what keeps it survivable.
-Sanity is the leak budget: you get 26, so a wave can drop threats on you without ending
-the run, and the sanity a wave costs is what the difficulty actually is. Focus is the
-build budget, and a kill pays `BOUNTY_RATE` of a threat's listed bounty — set below one
-precisely because volume went up, so a wave's income stays close to what one plot and one
-upgrade cost instead of buying the whole board twice over.
+**Health is difficulty**, because health pays nothing. It is a curve, and almost all of it
+sits in the squared term: `1 + (w-1)·0.05 + (w-1)²·0.014`, which is ×1.28 on wave four and
+×10.26 on wave twenty five. Bosses take half that curve on top of their written health, so
+the rogue agent arrives with about 124,000 rather than 22,000. Era one is a crowd you can
+out-build; era five is one you cannot.
+
+**Money is the other half.** A board of forty defences at level three puts out more damage
+than any wave can survive, so what the campaign is really asking is whether you can afford
+one. A kill pays 34% of its listed bounty and clearing a wave pays a small flat amount plus
+a larger bonus **only if nothing got through**. You can build wide or you can build tall,
+and until very late you cannot do both — which is where the strategy lives, along with
+which defence answers what, where on the lane you put it, and how much build time you bank
+by calling the wave early.
+
+Sanity is the third budget: 26, so a wave can drop threats on you without ending the run,
+and a defeat costs you the wave rather than the run in any case.
+
+**A threat that walks past your defences can only take so many with it.** Attrition,
+prompt injection, deprecation notices and 3am pages all mark every tower they pass, so
+uncapped their cost scales with the length of the lane rather than the count in the wave —
+twenty pagers leave the whole board stunned for the whole wave, and no board answers that
+because no board is firing. Each is capped at two to five defences. It is what lets those
+counts be raised at all.
 
 No build step, no dependencies, no server — static files and ES modules.
 
@@ -184,10 +201,17 @@ hands itself focus and sanity every briefing so every wave's data gets exercised
 makes its numbers meaningless as balance. This one plays the real economy and prints a
 row per wave — how long it took, what it cost in sanity, the focus banked either side,
 and the board that held it. The second argument is extra focus per wave, standing in for
-the skill its bot does not have: at `0` it plays like a first run and dies around wave
-fifteen, and from `100` up it holds the campaign. Run it before and after a change to
-`waves.js`, `threats.js`, `towers.js` or the constants in `config.js` and read the two
-tables side by side.
+the skill its bot does not have: at `0` it plays like a first run and dies around wave ten,
+and it needs about `500` to hold the campaign. Add `smart` as a third argument and it buys
+the same number of plots against the wave's roster — councils for armour, single target for
+anything splash cannot touch, observability for anything cloaked — which is a rough read on
+whether the counter design is doing any work.
+
+Watch the **depth** columns: the average and the furthest a threat got down the lane before
+dying, as a percentage. They are the honest measure of headroom. Threats evaporating at 6%
+means the wave is decoration; 30 to 60% means the board is working for it. Run it before and
+after a change to `waves.js`, `threats.js`, `towers.js` or the constants in `config.js` and
+read the two tables side by side.
 
 ## Project structure
 

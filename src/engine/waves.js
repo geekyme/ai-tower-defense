@@ -12,6 +12,22 @@ import { say, flash, banner, cheer, confetti, shock } from './effects.js';
 
 /** Seconds the wave-clear celebration holds the board before the briefing. */
 const CHEER_HOLD = 2.4;
+
+/**
+ * What clearing a wave pays.
+ *
+ * Most of it is conditional. A flat reward pays the same whether you held the
+ * lane or let a third of it walk past, which means the run funds itself back
+ * out of trouble and the board you end up with has nothing to do with how you
+ * played. Splitting it means a wave you hold clean pays for roughly the next
+ * upgrade and a wave you scrape through does not, so the gap between playing
+ * well and playing adequately compounds instead of washing out.
+ */
+const CLEAR_BASE = 30;
+const CLEAR_PER_WAVE = 5;
+const CLEAN_BASE = 30;
+const CLEAN_PER_WAVE = 6;
+
 const CONFETTI = ['#6ee7a0', '#35e6d5', '#a379ff', '#ffc24b', '#eafff4'];
 
 /** Flattens a wave's spawn groups into a time-ordered spawn queue. */
@@ -34,12 +50,17 @@ export function startWave() {
   S.queue = makeQueue(S.wave);
   S.phase = 'wave';
   S.t = 0;
+  // What the clean-wave bonus is measured against.
+  S.waveLeaks = S.leaked;
   banner(waveTitle(S.wave), 'wave ' + S.wave);
   emit('wave:started', { wave: S.wave });
 }
 
 function waveCleared() {
-  const reward = 45 + S.wave * 8;
+  const clean = S.leaked === S.waveLeaks;
+  const base = CLEAR_BASE + S.wave * CLEAR_PER_WAVE;
+  const bonus = clean ? CLEAN_BASE + S.wave * CLEAN_PER_WAVE : 0;
+  const reward = base + bonus;
   S.focus += reward;
   S.best = Math.max(S.best, S.wave);
   recordBestWave(S.wave);
@@ -48,7 +69,8 @@ function waveCleared() {
   const lesson = S.wave <= CAMPAIGN_WAVES ? lessonForWave(S.wave) : null;
   const isNew = lesson ? unlockLesson(S.wave) : false;
 
-  const lines = [{ t: '+' + reward + ' focus banked', c: '#35e6d5' }];
+  const lines = [{ t: '+' + base + ' focus banked', c: '#35e6d5' }];
+  if (bonus) lines.push({ t: '+' + bonus + ' nothing got past you', c: '#6ee7a0' });
   if (S.sanity === S.max) lines.push({ t: 'not a scratch on you', c: '#6ee7a0' });
   if (isNew) lines.push({ t: 'lesson unlocked · ' + lesson.title, c: '#a379ff' });
 
@@ -59,7 +81,7 @@ function waveCleared() {
   flash('#6ee7a0', 0.45);
   sfx.clear();
 
-  emit('wave:cleared', { wave: S.wave, reward, lesson: isNew ? lesson : null });
+  emit('wave:cleared', { wave: S.wave, reward, clean, lesson: isNew ? lesson : null });
 
   // Hold here so the celebration is seen, rather than being buried under the
   // next briefing a frame later.

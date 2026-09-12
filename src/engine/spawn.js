@@ -1,5 +1,6 @@
 import { THREATS, MIMIC_POOL } from '../data/threats.js';
-import { WAVE_HP_SCALE, WAVE_HP_ACCEL, ENDLESS_HP_SCALE, BOUNTY_RATE } from '../core/config.js';
+import { WAVE_HP_SCALE, WAVE_HP_ACCEL, ENDLESS_HP_SCALE, BOUNTY_RATE, BOSS_HP_SHARE }
+  from '../core/config.js';
 import { S } from '../core/state.js';
 import { cell, at } from '../core/view.js';
 import { sfx } from '../core/audio.js';
@@ -18,7 +19,8 @@ export function scale() {
  */
 export function spawn(key, d) {
   const D = THREATS[key];
-  const mult = D.boss ? 1 + S.endless * 0.8 : scale();
+  // Bosses take half the wave curve, so the finale is still a finale.
+  const mult = D.boss ? 1 + (scale() - 1) * BOSS_HP_SHARE + S.endless * 0.8 : scale();
 
   const f = {
     k: key,
@@ -34,6 +36,7 @@ export function spawn(key, d) {
     shield: 0, shMax: 0, shT: 0,
 
     // timers
+    took: 0,
     sT: D.spawn ? D.spawn[1] : 0,
     pT: D.pcd || 0,
     slT: 0,
