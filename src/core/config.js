@@ -28,6 +28,18 @@ export const SELL_REFUND = 0.45;
 /** Upgrade cost = base cost * UPGRADE_COST_FACTOR * current level. */
 export const UPGRADE_COST_FACTOR = 0.9;
 
+/**
+ * How much of the wave's health curve a boss carries.
+ *
+ * Boss health is written flat in `threats.js` because a boss arrives on one
+ * fixed wave, but the campaign's curve now climbs past ×10 and a flat boss at
+ * the end of it is a speed bump between two harder ordinary waves. Half the
+ * curve keeps each boss the wall its wave is built around without making the
+ * early ones, which arrive before you own much of a board, unkillable:
+ * the first pilot review lands at ×1.21 and the rogue agent at ×5.63.
+ */
+export const BOSS_HP_SHARE = 0.5;
+
 /** Per-level tower scaling. */
 export const LEVEL_DAMAGE = 1.55;
 export const LEVEL_RANGE = 1.1;
@@ -36,14 +48,19 @@ export const LEVEL_RATE = 0.9;
 /**
  * Focus paid per kill, as a fraction of a threat's listed bounty.
  *
- * Bounties are written per threat and a wave now carries two to three times
- * the threats it used to, so paying them in full handed over two to three
- * times the income for the same board: by the middle of the campaign there
- * was nothing left to buy and every later decision was free. Scaling the
- * payout back keeps a wave's income close to what one plot and one upgrade
- * cost, which is what makes the build phase a choice.
+ * This is the difficulty knob that does not show up in a briefing, and it is
+ * the one that decides whether a wave is a fight. A board of forty defences
+ * at level three puts out something like 2000 damage a second, which is more
+ * than any wave can survive; what stops you owning that board is being able
+ * to afford it. At full bounty the campaign paid for it twice over by wave
+ * fifteen and every wave after that was a formality, so the payout is set
+ * well under one: you can build wide, or you can build tall, and until very
+ * late you cannot do both.
+ *
+ * Raise it and the game gets easier far faster than the health curve makes it
+ * harder. Check any change with `node scripts/balance.mjs 25 200`.
  */
-export const BOUNTY_RATE = 0.65;
+export const BOUNTY_RATE = 0.34;
 
 /**
  * Threat health scaling, as a curve rather than a straight line.
@@ -51,17 +68,20 @@ export const BOUNTY_RATE = 0.65;
  * A wave is worth `1 + (w-1) * WAVE_HP_SCALE + (w-1)^2 * WAVE_HP_ACCEL`, plus
  * a further +8% for every wave past the campaign.
  *
- * The linear term is deliberately gentler than the volume it now arrives in:
- * a wave carries two to three times the threats it used to, so pushing health
- * at the old rate on top of that would make era one unwinnable rather than
- * busy. The squared term is what makes the back half hurt — it is almost
- * nothing before wave ten and it is most of the multiplier by wave twenty
- * five, so the campaign opens as a crowd you can out-build and closes as one
- * you cannot.
+ * Almost all of it is in the squared term, and deliberately. Volume cannot
+ * carry difficulty on its own — a threat pays a bounty when it dies, so a
+ * bigger wave part-funds the board that answers it, and past a point the
+ * board runs out of plots rather than money. Health pays nothing, so it is
+ * the term that actually decides whether a wave is a fight.
  *
- *   wave  1  ×1.00      wave 15  ×2.32
- *   wave  5  ×1.27      wave 20  ×3.06
- *   wave 10  ×1.72      wave 25  ×3.93
+ * Keeping the linear term small is what leaves era one learnable while the
+ * finale is ten times the base: a defence you place on wave two is still
+ * worth placing on wave four, and worth nothing on its own by wave twenty.
+ *
+ *   wave  1  ×1.00      wave 12  ×3.24
+ *   wave  4  ×1.28      wave 16  ×4.90
+ *   wave  8  ×2.04      wave 20  ×7.00
+ *   wave 10  ×2.58      wave 25  ×10.26
  *
  * `S.endless` counts waves, not laps, so the endless figure is per wave too,
  * and it stacks on top of a curve that is already climbing steeply by then —
@@ -69,8 +89,8 @@ export const BOUNTY_RATE = 0.65;
  * campaign's finale within ten waves and ended the run whatever you built,
  * which is a wall rather than an endless mode.
  */
-export const WAVE_HP_SCALE = 0.055;
-export const WAVE_HP_ACCEL = 0.0028;
+export const WAVE_HP_SCALE = 0.05;
+export const WAVE_HP_ACCEL = 0.014;
 export const ENDLESS_HP_SCALE = 0.08;
 
 /** Cell keys covered by the lane, so nothing can be built on it. */

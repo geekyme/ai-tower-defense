@@ -2,6 +2,7 @@ import { THREATS } from '../data/threats.js';
 import { CAMPAIGN_WAVES, waveTitle, waveEra, waveRoster } from '../data/waves.js';
 import { S, newRun, runDuration } from '../core/state.js';
 import { layout } from '../core/view.js';
+import { START_SANITY } from '../core/config.js';
 import { on } from '../core/bus.js';
 import { sfx } from '../core/audio.js';
 import { progress, recordSession, unlockedCount, clearSavedRun } from '../core/storage.js';
@@ -161,9 +162,10 @@ function stepsHTML() {
 /** The two numbers on the bar, in the colours they are shown in. */
 function legendHTML() {
   return '<ul class="legend">' +
-    '<li class="cy"><b>Focus</b> buys defences. Every kill pays more.</li>' +
-    '<li class="co"><b>Sanity</b> is your health. You get sixteen, and anything ' +
-      'that reaches the end takes some.</li>' +
+    '<li class="cy"><b>Focus</b> buys defences. Kills pay for it, and holding a ' +
+      'wave clean pays more than scraping through one.</li>' +
+    '<li class="co"><b>Sanity</b> is your health. You get ' + START_SANITY +
+      ', and anything that reaches the end takes some.</li>' +
     '</ul>';
 }
 

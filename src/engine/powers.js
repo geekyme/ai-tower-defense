@@ -20,13 +20,25 @@ function nearestTower(x, y, radiusCells) {
   return best;
 }
 
-/** Applies `fn` to each tower in range, at most once per threat per tower. */
-export function touchTowers(f, radiusCells, fn) {
+/**
+ * Applies `fn` to each tower in range, at most once per threat per tower, and
+ * at most `max` towers over the threat's whole walk down the lane.
+ *
+ * The cap is what makes the count in a wave mean anything. These effects mark
+ * every defence they pass, so without one their cost is not the number of
+ * threats but the length of the lane: twenty pagers walking the board end to
+ * end leave every tower stunned for the whole wave, and no board answers that
+ * because no board is firing. Capped, a wave with twice as many of them is
+ * twice as bad rather than absolutely bad, and killing them early is worth
+ * something.
+ */
+export function touchTowers(f, radiusCells, max, fn) {
+  if (f.took >= max) return;
   for (const t of S.towers) {
     if (f.marked.has(t)) continue;
     if (Math.hypot(t.x - f.x, t.y - f.y) < cell * radiusCells) {
       f.marked.add(t);
-      fn(t);
+      if (fn(t) !== false && ++f.took >= max) return;
     }
   }
 }
@@ -87,17 +99,28 @@ function hijack(f) {
   flash('#ff3b6b', 0.3);
 }
 
+/**
+ * Levels are the only thing a boss takes that does not come back on its own,
+ * and this is the only power that takes them. Uncapped it stripped every
+ * defence within four cells on every cooldown, which over a boss's walk down
+ * the lane is the whole board: eight sweeps later you own forty level-one
+ * towers and no campaign's income buys that back. Capped, it is something you
+ * play around instead of a tax — three levels a sweep, taken nearest first,
+ * and how many sweeps you eat is how long you let the boss walk.
+ */
+const DOWNGRADE_MAX = 3;
+
 function downgrade(f) {
-  let n = 0;
-  for (const t of S.towers) {
-    if (Math.hypot(t.x - f.x, t.y - f.y) < cell * 4.2 && t.lv > 1) {
-      t.lv--;
-      n++;
-      pulse(t.x, t.y, cell * 0.9, '#a379ff', 0.5);
-    }
+  const hit = S.towers
+    .filter(t => t.lv > 1 && Math.hypot(t.x - f.x, t.y - f.y) < cell * 4.2)
+    .sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y))
+    .slice(0, DOWNGRADE_MAX);
+  for (const t of hit) {
+    t.lv--;
+    pulse(t.x, t.y, cell * 0.9, '#a379ff', 0.5);
   }
-  say(f.x, f.y - cell, n ? 'restructured' : 'nothing left to cut', '#a379ff', cell * 0.3);
-  if (!n) return;
+  say(f.x, f.y - cell, hit.length ? 'restructured' : 'nothing left to cut', '#a379ff', cell * 0.3);
+  if (!hit.length) return;
   sfx.power();
   shake(10);
   flash('#a379ff', 0.3);
