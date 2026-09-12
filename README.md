@@ -19,8 +19,11 @@ never starts on its own, and one tap on **Skip** retires it for good.
 Twenty five waves, twenty five lessons, and the full list once you finish the campaign.
 
 Burning out costs you the wave rather than the run: every briefing leaves a checkpoint
-behind, so a defeat offers the same wave again with the board and the focus you started
-it with, and your sanity back.
+behind, so a defeat offers the same wave again with the board, the focus and the sanity
+you started it with. Not a full bar — a retry that healed you completely made losing on
+purpose the cheapest way to top up, so the sanity carried between waves was never really
+spent. There is a floor at half your maximum so a retry is never unplayable, and holding
+a wave clean is what actually earns sanity back.
 
 That checkpoint is written down too, so **leaving the page does not cost you the run**.
 Open the playbook, reload, or lose the tab, and the menu offers the run back at the top
@@ -41,21 +44,22 @@ eighty from era two, seventy plus a boss in the finale — because a full lane i
 not because it is what makes the game hard.
 
 **Health is difficulty**, because health pays nothing. It is a curve, and almost all of it
-sits in the squared term: `1 + (w-1)·0.05 + (w-1)²·0.014`, which is ×1.28 on wave four and
-×10.26 on wave twenty five. Bosses take half that curve on top of their written health, so
-the rogue agent arrives with about 124,000 rather than 22,000. Era one is a crowd you can
+sits in the squared term: `1 + (w-1)·0.05 + (w-1)²·0.012`, which is ×1.26 on wave four and
+×9.11 on wave twenty five. Bosses take 42% of that curve on top of their written health, so
+the rogue agent arrives with about 97,000 rather than 22,000. Era one is a crowd you can
 out-build; era five is one you cannot.
 
 **Money is the other half.** A board of forty defences at level three puts out more damage
 than any wave can survive, so what the campaign is really asking is whether you can afford
-one. A kill pays 34% of its listed bounty and clearing a wave pays a small flat amount plus
+one. A kill pays 38% of its listed bounty and clearing a wave pays a small flat amount plus
 a larger bonus **only if nothing got through**. You can build wide or you can build tall,
 and until very late you cannot do both — which is where the strategy lives, along with
 which defence answers what, where on the lane you put it, and how much build time you bank
 by calling the wave early.
 
-Sanity is the third budget: 26, so a wave can drop threats on you without ending the run,
-and a defeat costs you the wave rather than the run in any case.
+Sanity is the third budget: 26, and the only one you can earn back — a wave nothing got
+through returns one, so a run damaged early can climb out of it by playing well rather
+than by dying and retrying. A defeat costs you the wave rather than the run in any case.
 
 **A threat that walks past your defences can only take so many with it.** Attrition,
 prompt injection, deprecation notices and 3am pages all mark every tower they pass, so

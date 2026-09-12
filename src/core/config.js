@@ -32,13 +32,17 @@ export const UPGRADE_COST_FACTOR = 0.9;
  * How much of the wave's health curve a boss carries.
  *
  * Boss health is written flat in `threats.js` because a boss arrives on one
- * fixed wave, but the campaign's curve now climbs past ×10 and a flat boss at
- * the end of it is a speed bump between two harder ordinary waves. Half the
- * curve keeps each boss the wall its wave is built around without making the
- * early ones, which arrive before you own much of a board, unkillable:
- * the first pilot review lands at ×1.21 and the rogue agent at ×5.63.
+ * fixed wave, but the campaign's curve climbs past ×9 and a flat boss at the
+ * end of it is a speed bump between two harder ordinary waves. A share of the
+ * curve keeps each boss the wall its wave is built around.
+ *
+ * It has to stay under half. At half, every boss from the audit onwards
+ * simply outlived its own walk down the lane — measured, the only things
+ * reaching the end of a cleared campaign were the three bosses themselves,
+ * which is a fixed tax on the run rather than a fight you can win. At 0.42
+ * the first pilot review lands at ×1.16 and the rogue agent at ×4.41.
  */
-export const BOSS_HP_SHARE = 0.5;
+export const BOSS_HP_SHARE = 0.42;
 
 /** Per-level tower scaling. */
 export const LEVEL_DAMAGE = 1.55;
@@ -60,7 +64,7 @@ export const LEVEL_RATE = 0.9;
  * Raise it and the game gets easier far faster than the health curve makes it
  * harder. Check any change with `node scripts/balance.mjs 25 200`.
  */
-export const BOUNTY_RATE = 0.34;
+export const BOUNTY_RATE = 0.38;
 
 /**
  * Threat health scaling, as a curve rather than a straight line.
@@ -75,13 +79,13 @@ export const BOUNTY_RATE = 0.34;
  * the term that actually decides whether a wave is a fight.
  *
  * Keeping the linear term small is what leaves era one learnable while the
- * finale is ten times the base: a defence you place on wave two is still
+ * finale is nine times the base: a defence you place on wave two is still
  * worth placing on wave four, and worth nothing on its own by wave twenty.
  *
- *   wave  1  ×1.00      wave 12  ×3.24
- *   wave  4  ×1.28      wave 16  ×4.90
- *   wave  8  ×2.04      wave 20  ×7.00
- *   wave 10  ×2.58      wave 25  ×10.26
+ *   wave  1  ×1.00      wave 12  ×2.99
+ *   wave  4  ×1.26      wave 16  ×4.45
+ *   wave  8  ×1.94      wave 20  ×6.28
+ *   wave 10  ×2.42      wave 25  ×9.11
  *
  * `S.endless` counts waves, not laps, so the endless figure is per wave too,
  * and it stacks on top of a curve that is already climbing steeply by then —
@@ -90,7 +94,7 @@ export const BOUNTY_RATE = 0.34;
  * which is a wall rather than an endless mode.
  */
 export const WAVE_HP_SCALE = 0.05;
-export const WAVE_HP_ACCEL = 0.014;
+export const WAVE_HP_ACCEL = 0.012;
 export const ENDLESS_HP_SCALE = 0.08;
 
 /** Cell keys covered by the lane, so nothing can be built on it. */

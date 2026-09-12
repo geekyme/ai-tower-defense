@@ -8,7 +8,7 @@ import { sfx } from '../core/audio.js';
 import { progress, recordSession, unlockedCount, clearSavedRun } from '../core/storage.js';
 import { scale } from '../engine/spawn.js';
 import { startWave, nextBrief, beginBuildPhase } from '../engine/waves.js';
-import { hasCheckpoint, retryWave, clearCheckpoint, resumableRun, resumeRun,
+import { hasCheckpoint, retryWave, retrySanityValue, clearCheckpoint, resumableRun, resumeRun,
   saveEndlessEntry } from '../engine/checkpoint.js';
 import { threatThumbnail } from '../render/shapes.js';
 import { el, refs, esc } from './dom.js';
@@ -341,7 +341,7 @@ export function defeat() {
   const canRetry = hasCheckpoint();
   const retry = canRetry
     ? '<p class="lore">Go again from the top of this wave: the defences and the focus you' +
-      ' started it with, and your sanity back to ' + S.max + '. Build it differently.</p>' +
+      ' started it with, and ' + retrySanityValue() + ' sanity. Build it differently.</p>' +
       '<button id="retry" type="button">Try wave ' + S.wave + ' again</button>'
     : '';
 
